@@ -1,6 +1,6 @@
-# **WhiskerBytes - Food Donation & Distribution Management System**
+# **WhiskerBytes - RHS Animal Food Management**
 
-## **👤 Student Name**
+## **👤 Student Names**
 **Aliasgar Mithawala, Savan Pedhadiya**
 
 ---
