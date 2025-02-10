@@ -3,9 +3,6 @@
 ## **👤 Student Name**
 **Aliasgar Mithawala, Savan Pedhadiya**
 
-## **📂 GitHub Repository**
-[WhiskerBytes](#) *(Insert GitHub repository link here)*
-
 ---
 
 ## **🌍 UN SDG(s)**
