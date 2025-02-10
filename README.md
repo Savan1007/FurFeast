@@ -5,6 +5,12 @@
 
 ---
 
+## **📽️ Project Video Overview**
+🎥 Watch our 3-minute introduction video on WhiskerBytes:  
+[![WhiskerBytes Project Video](https://img.youtube.com/vi/yaF0cCZOOhQ/0.jpg)](https://youtu.be/yaF0cCZOOhQ) 
+
+---
+
 ## **🌍 UN SDG(s)**
 This project aligns with the following **United Nations Sustainable Development Goals (SDGs):**
 - **Goal 2: Zero Hunger** – Ensuring efficient food distribution to those in need.
