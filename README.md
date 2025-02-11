@@ -1,7 +1,7 @@
 # **WhiskerBytes - RHS Animal Food Management**
 
 ## **👤 Student Names**
-**Aliasgar Mithawala, Savan Pedhadiya**
+**Aliasgar Mithawala, Savan Pedhadiya, Mohammad Abbasi**
 
 ---
 
