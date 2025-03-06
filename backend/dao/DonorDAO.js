@@ -1,10 +1,16 @@
 const { Donor } = require("../models");
 
+/**
+ * Data Access Object for Donor model operations
+ */
 class DonorDAO {
   /**
-   * Create a new donor
-   * @param {Object} donor - Donor data
-   * @param {Object} transaction - Sequelize transaction
+   * Creates a new donor record
+   * @param {Object} donor - Donor data to create
+   * @param {Object} [transaction] - Sequelize transaction object
+   * @returns {Promise<Donor>} Newly created donor instance
+   * @throws {Error} "Duplicate entry" if email constraint violated
+   * @throws {Error} General database error
    */
   static async create(donor, transaction) {
     try {
@@ -24,7 +30,12 @@ class DonorDAO {
       throw new Error("Database error while creating donor");
     }
   }
-
+  /**
+   * Finds donor by email address
+   * @param {string} email - Email to search
+   * @returns {Promise<Donor|null>} Found donor or null
+   * @throws {Error} Database query error
+   */
   static async findByEmail(email) {
     try {
       const donor = await Donor.findOne({
@@ -34,13 +45,15 @@ class DonorDAO {
       });
       return donor;
     } catch (error) {
-      console.error("DAO Error (getDonorByEmail):", error);
+      console.error("DAO Error (DonorDAO, findByEmail):", error);
       throw new Error("Database error while checking donor email");
     }
   }
 
   /**
-   * Get all donors
+   * Retrieves all donor records
+   * @returns {Promise<Donor[]>} Array of all donors
+   * @throws {Error} Database query error
    */
   static async findAll() {
     try {
@@ -51,9 +64,11 @@ class DonorDAO {
     }
   }
 
-  /**
-   * Get a donor by ID
-   * @param {number} id - Donor ID
+   /**
+   * Finds donor by primary key ID
+   * @param {number} id - Donor ID to retrieve
+   * @returns {Promise<Donor|null>} Found donor or null
+   * @throws {Error} Database query error
    */
   static async findById(id) {
     try {
@@ -64,12 +79,14 @@ class DonorDAO {
     }
   }
 
-  /**
-   * Update donor details
-   * @param {number} id - Donor ID
-   * @param {Object} data - Updated donor details
-   * @param {Object} transaction - Sequelize transaction
-   * @returns {(null|Donor)}
+ 
+/**
+   * Updates donor record
+   * @param {Donor} donor - Donor instance to update
+   * @param {Object} data - New data values
+   * @param {Object} [transaction] - Sequelize transaction
+   * @returns {Promise<Donor>} Updated donor instance
+   * @throws {Error} Database/validation error
    */
   static async update(donor, data, transaction) {
     try {
@@ -77,7 +94,7 @@ class DonorDAO {
       return donor;
     } catch (error) {
       console.error(
-        "DAO Error (update):",
+        "DAO Error (update, donorDAO):",
         error.errors.map((e) => ({
           message: e.message,
           path: e.path,
@@ -87,14 +104,16 @@ class DonorDAO {
     }
   }
 
-
-  /**
-   * @param {number} id - Donor ID
-   * @returns {true|false} Retuens true if deleted, fasle if not
+ /**
+   * Deletes donor by ID
+   * @param {number} id - Donor ID to delete
+   * @param {Object} [transaction] - Sequelize transaction
+   * @returns {Promise<boolean>} True if deletion succeeded
+   * @throws {Error} Database error
    */
   static async deleteById(id, transaction){
     try{
-      const countDeleted = await Donor.destroy({where: {id:id}}, transaction)
+      const countDeleted = await Donor.destroy({where: {id:id}},{ transaction})
       return countDeleted > 0
     }catch(error){
       console.error('DAO error (deleteById):', error.message)
