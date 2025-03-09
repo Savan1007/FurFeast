@@ -8,7 +8,7 @@ class DonationDAO {
      * @param {*} donation 
      * @param {*} transaction 
      * @returns {Donation|Exception} returns new donation record or throws exception if can not 
-     * find donor! or any other errors!
+     * find supplier! or any other errors!
      */
     static async create(donation, transaction) {
         try {
@@ -22,14 +22,14 @@ class DonationDAO {
 
 
     /**
- * Retrieves all donations, optionally including associated Donor data.
- * @param {boolean} [include=false] - Whether to include Donor association
+ * Retrieves all donations, optionally including associated Supplier data.
+ * @param {boolean} [include=false] - Whether to include Supplier association
  * @returns {Promise<Donation[]>} Array of donation records
  * @throws {Error} If database query fails
  */
     static async findAll(include) {
         try{
-            const option = include ? {include : 'Donor'} : {};
+            const option = include ? {include : 'Supplier'} : {};
             return await Donation.findAll(option);
         }catch(error){
             console.error("DonationDAO error (findAll donation):", error.message)
@@ -38,15 +38,15 @@ class DonationDAO {
     }
 
 /**
- * Finds a donation by ID with optional donor inclusion.
+ * Finds a donation by ID with optional supplier inclusion.
  * @param {number} id - ID of the donation to retrieve
- * @param {boolean} [include=false] - Whether to include associated Donor model
+ * @param {boolean} [include=false] - Whether to include associated Supplier model
  * @returns {Promise<Donation|null>} Donation record or null if not found
  * @throws {Error} If database query fails
  */
     static async findById(id, include){
         try{
-            const option = include ? {include : 'Donor'} : {};
+            const option = include ? {include : 'Supplier'} : {};
             return await Donation.findByPk(id, option)
         }catch(error){
             console.error('DonationDAO error(findById): ', error.message);

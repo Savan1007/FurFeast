@@ -50,7 +50,7 @@ const config = require('../config/config.js')['development'];
 const sequelize = new Sequelize(config.database, config.username, config.password, config);
 
 // Manually register models
-const Donor = require('./donor')(sequelize, Sequelize.DataTypes);
+const Supplier = require('./supplier.js')(sequelize, Sequelize.DataTypes);
 const Donation = require('./donation')(sequelize, Sequelize.DataTypes);
 const Recipient = require('./recipient')(sequelize, Sequelize.DataTypes);
 const Inventory = require('./inventory')(sequelize, Sequelize.DataTypes);
@@ -60,7 +60,7 @@ const Log = require('./log')(sequelize, Sequelize.DataTypes);
 const db = {
   sequelize,
   Sequelize,
-  Donor,
+  Supplier,
   Donation,
   Recipient,
   Distribution,

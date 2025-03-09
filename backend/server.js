@@ -1,37 +1,33 @@
 
-require('dotenv').config();
-
+// require("dotenv").config();
+require("dotenv").config();
+const errorRouter = require('./routes/error')
+const supplierRouter = require('./routes/supplierRouts');
+const donationRouter = require('./routes/donationRouts');
+const recipientRouter = require('./routes/recipientRouts');
+const inventoryRouter = require('./routes/inventroyRouts');
 const express = require('express');
 const cors = require('cors');
 const { pool, testConnection } = require('./util/dbConnection')
-const app = express();
-const  {Donor, Inventory, Log}  = require('./models');
-
-
-
-
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }))
-app.use(cors());
+const setupSwagger = require("./swagger");
 
 // pool.execute('select * from employees').then(([result, tableST])=>{
-//     console.log(result)
-// }).catch()
+    //     console.log(result)
+    // }).catch()
 
-async function testConnectionS() {
-   const donor = await Donor.findAll();
-   const inventroy = await Inventory.findAll();
-   const log = await Log.findAll();
-}
-testConnectionS();
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }))
 
-app.get('/', (req, res, next) => {
-    res.send('Welcome to Regina Humane Society API!');
-});
+app.use(supplierRouter);
+app.use(donationRouter);
+app.use(recipientRouter);
+app.use(inventoryRouter);
+setupSwagger(app);
+app.use(errorRouter);
 
-
-const PORT = 6000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT;
+app.listen(3000, () => {
     console.log(`Server is running on port ${PORT}`);
 });

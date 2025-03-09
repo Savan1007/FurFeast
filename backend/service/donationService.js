@@ -1,5 +1,5 @@
 const DonationDAO = require("../dao/DonationDAO");
-const donorService = require('./donorService');
+const supplierService = require('./supplierService');
 const { sequelize } = require("../models");
 
 
@@ -7,18 +7,18 @@ class DonationService {
 
 
      /**
-   * Creates a new donation associated with a donor.
+   * Creates a new donation associated with a supplier.
    * @param {Object} donation - Donation data to create
-   * @param {number} donorId - ID of the associated donor
-   * @returns {Promise<Donation>} Newly created donation with donor association
-   * @throws {Error} If donor not found or database operation fails
+   * @param {number} supplierId - ID of the associated supplier
+   * @returns {Promise<Donation>} Newly created donation with supplier association
+   * @throws {Error} If supplier not found or database operation fails
    */
     static async createDonation(donation, id) {
         const transaction = await sequelize.transaction();
         try {
-            const donor = await donorService.findById(id);
+            const supplier = await supplierService.findById(id);
             const newDonation = await DonationDAO.create(donation, {transaction});
-            await newDonation.setDonor(donor, {transaction});
+            await newDonation.setSupplier(supplier, {transaction});
             await transaction.commit();
             return newDonation;
         } catch (error) {
@@ -32,8 +32,8 @@ class DonationService {
     }
 
     /**
-   * Retrieves all donations with their associated donor data(if include set to true!).
-   * @returns {Promise<Donation[]>} Array of donations including donor details
+   * Retrieves all donations with their associated supplier data(if include set to true!).
+   * @returns {Promise<Donation[]>} Array of donations including supplier details
    * @throws {Error} If database query fails
    */
     static async findAllDonations(include=false) {
@@ -48,9 +48,9 @@ class DonationService {
 
 
 /**
- * Retrieves a donation by ID with optional donor inclusion, validating its existence.
+ * Retrieves a donation by ID with optional supplier inclusion, validating its existence.
  * @param {number} id - ID of the donation to retrieve
- * @param {boolean} [include=false] - Whether to include associated Donor data
+ * @param {boolean} [include=false] - Whether to include associated Supplier data
  * @returns {Promise<Donation>} Found donation record with optional association
  * @throws {Error} "Donation Not Found" if no record exists
  * @throws {Error} Propagates database errors
@@ -108,7 +108,7 @@ class DonationService {
             return newDonation;
         }catch(error){
             await transaction.rollback();
-            console.error('donationSerive error (updateDonor):',
+            console.error('donationSerive error (updateSupplier):',
                  error.errors?.map(e=>({
                     message:e.message,
                     path: e.path

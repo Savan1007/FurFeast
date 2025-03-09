@@ -18,8 +18,8 @@ exports.create = async(req, res, next) =>{
 /** @type {import("express").RequestHandler} */
 exports.findAll = async (req, res, next)=>{
     try{
-        const includeDonor = req.query.includeDonor === 'true';
-        const donations = await donationService.findAllDonations(includeDonor);
+        const includeSupplier = req.query.includeSupplier === 'true';
+        const donations = await donationService.findAllDonations(includeSupplier);
         console.log(donations)
         res.status(200).json({success:true, message:'', data: donations})
     }catch(error){
@@ -32,8 +32,8 @@ exports.findAll = async (req, res, next)=>{
 exports.findById = async (req, res, next)=>{
     try{
         const id = req.params.id;
-        const includeDonor = req.query.includeDonor === 'true';
-        const donation = await donationService.findDonationById(id,includeDonor);
+        const includeSupplier = req.query.includeSupplier === 'true';
+        const donation = await donationService.findDonationById(id,includeSupplier);
         res.status(200).json({success:true, message:'', data: donation})
     }catch(error){
         console.error('DonationController error(findById): ', error.message);
@@ -62,7 +62,7 @@ exports.delete = async (req, res, next)=>{
 exports.update = async(req, res, next)=>{
     try{
         const donation = await donationService.updateDonation(req.params.id, req.body.donation);
-        res.status(201).json({success:true, data:donation})
+        res.status(200).json({success:true, data:donation})
     }catch(error){
         console.error('Controller error(update, donationController): ', error.message);
         res.status(400).json({success:false, messasge: error.message});
