@@ -1,4 +1,4 @@
-# **WhiskerBytes - RHS Animal Food Management**
+# **FurFeast - RHS Animal Food Management**
 
 ## **👤 Student Names**
 **Aliasgar Mithawala, Savan Pedhadiya, Mohammad Abbasi**
@@ -6,8 +6,8 @@
 ---
 
 ## **📽️ Project Video Overview**
-🎥 Watch our 3-minute introduction video on WhiskerBytes:  
-[![WhiskerBytes Project Video](https://img.youtube.com/vi/yaF0cCZOOhQ/0.jpg)](https://youtu.be/yaF0cCZOOhQ) 
+🎥 Watch our 3-minute introduction video on FurFeast:  
+[![FurFeast Project Video](https://img.youtube.com/vi/yaF0cCZOOhQ/0.jpg)](https://youtu.be/yaF0cCZOOhQ) 
 
 ---
 
@@ -19,12 +19,12 @@ This project aligns with the following **United Nations Sustainable Development 
 ---
 
 ## **💡 Project Idea**
-**WhiskerBytes** is a **web-based platform** that automates **food donation, request tracking, and inventory management** for the **Regina Humane Society (RHS)**. It replaces the existing **manual tracking process** with a **centralized, real-time system** to improve **efficiency, accuracy, and scalability**.
+**FurFeast** is a **web-based platform** that automates **food donation, request tracking, and inventory management** for the **Regina Humane Society (RHS)**. It replaces the existing **manual tracking process** with a **centralized, real-time system** to improve **efficiency, accuracy, and scalability**.
 
 ---
 
 ## **🌍 Project Background & Business Opportunity**
-### **Why WhiskerBytes? 🤔**
+### **Why FurFeast? 🤔**
 The **Regina Humane Society (RHS)** currently **relies on outdated manual tracking methods**—using **spreadsheets, phone calls, and paper logs**—to manage food donations, inventory, and distributions. This fragmented approach causes inefficiencies, making it harder to **streamline donations**, **track inventory accurately**, and **ensure food reaches those in need on time**. 📉
 
 ### **Challenges Faced:**
@@ -33,15 +33,15 @@ The **Regina Humane Society (RHS)** currently **relies on outdated manual tracki
 - **📊 Difficult to scale** – The increasing volume of donations and requests makes manual tracking unsustainable.
 
 ### **🚀 Innovation & Business Need**
-**WhiskerBytes** is a **game-changer** in food donation management. By **eliminating manual errors** and **enhancing coordination**, this platform ensures a **faster, transparent, and reliable process** for managing food distribution. 🏆
+**FurFeast** is a **game-changer** in food donation management. By **eliminating manual errors** and **enhancing coordination**, this platform ensures a **faster, transparent, and reliable process** for managing food distribution. 🏆
 
-With WhiskerBytes, we bring a **fully digital, structured approach** to food donation management, enabling:
+With FurFeast, we bring a **fully digital, structured approach** to food donation management, enabling:
 ✅ **Automated food request and approval system** – Reducing reliance on phone-based coordination.  
 ✅ **Real-time inventory tracking** – Ensuring updated stock availability for RHS staff.  
 ✅ **Supplier & donor self-service dashboard** – Allowing direct logging of food donations.  
 ✅ **Automated reporting & analytics** – Providing accurate, real-time insights into food donations and distributions.  
 
 📡 **Scalability & Future Vision**
-Beyond RHS, **WhiskerBytes** has the potential to **transform food donation management** across **multiple non-profits** in Regina. The next step will be expanding the system to **Al Ritchie Community Association**, with long-term scalability to support **regional and national food distribution networks**. Our vision is to build a **versatile, sustainable, and impactful** platform that ensures **no food goes to waste** while efficiently **feeding those in need**. 🌱💡
+Beyond RHS, **FurFeast** has the potential to **transform food donation management** across **multiple non-profits** in Regina. The next step will be expanding the system to **Al Ritchie Community Association**, with long-term scalability to support **regional and national food distribution networks**. Our vision is to build a **versatile, sustainable, and impactful** platform that ensures **no food goes to waste** while efficiently **feeding those in need**. 🌱💡
 
 ---
