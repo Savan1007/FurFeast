@@ -23,35 +23,39 @@ import {
 import Navbar from "../../../components/navbar";
 import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
 import { Form, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-const insertFoodRequestSchema = z.object({
-  type: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  organizationName: z.string().optional(),
-  contactPerson: z.string().optional(),
-  details: z.array(
-    z.object({
-      category: z.string(),
-      subCategory: z.string(),
-      quantity: z.number(),
-    })
-  ),
-});
+import { useCreateRequest, useFetchAllSuppliers } from "../api/api";
+import { insertFoodRequestSchema } from "../api/types";
 
 const AddRequest = () => {
   const navigate = useNavigate();
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const textColor = useColorModeValue("gray.600", "gray.400");
+  const { data: request, mutate, isSuccess, status } = useCreateRequest();
+  const getSuppliers = useFetchAllSuppliers();
 
-  const categories: { [key: string]: string[] } = {
-    "Dog Foods": ["Dry foods", "Wet foods"],
-    "Cat Foods": ["Dry foods", "Wet foods"],
+  useEffect(() => {
+    getSuppliers.mutate(undefined, {
+      onSuccess: () => {
+        console.log(getSuppliers.data?.data);
+        console.log("Data fetched successfully");
+      },
+      onError: (error) => {
+        console.error("Error fetching data", error);
+      },
+    });
+  }, [mutate]);
+
+  const foodCategories: { [key: string]: string[] } = {
+    Foods: [
+      "Dog's Dry foods (KG)",
+      "Dog's Wet foods (Cans)",
+      "Cat's Dry foods (KG)",
+      "Cat's Wet foods (Cans)",
+    ],
     Miscellaneous: [],
   };
 
@@ -62,11 +66,9 @@ const AddRequest = () => {
       email: "",
       phone: "",
       organizationName: "",
+      supplierId: 0,
       contactPerson: "",
-      details: [{ category: "", subCategory: "", quantity: 0 }],
-      // categories: [],
-      // subCategories: [],
-      // quantities: [],
+      details: [{ category: "", subCategory: "", quantity: 0, unit: "" }],
     },
   });
 
@@ -101,6 +103,7 @@ const AddRequest = () => {
 
   const handleSubmit = () => {
     console.log("submitted", form.getValues());
+    mutate(form.getValues());
   };
 
   return (
@@ -157,21 +160,32 @@ const AddRequest = () => {
                                 ? "Supplier Name"
                                 : "Organization Name"}
                             </FormLabel>
-                            <Input
-                              type="organizationName"
-                              placeholder={
-                                form.watch("type") === "supplier"
-                                  ? "Enter Supplier Name"
-                                  : "Enter Organization Name"
-                              }
-                              value={form.watch("organizationName") || ""}
+                            <Select
+                              placeholder="Choose a category"
+                              value={(form.watch("organizationName") || form.watch("supplierId")) || ""}
                               onChange={(e) => {
-                                form.setValue(
-                                  "organizationName",
-                                  e.target.value
-                                );
+                                if (form.watch("type") === "supplier") {
+                                  form.setValue("supplierId", parseInt(e.target.value));
+                                } else {
+                                  form.setValue(
+                                    "organizationName",
+                                    e.target.value
+                                  );
+                                }
                               }}
-                            />
+                            >
+                              {getSuppliers.data &&
+                                getSuppliers.data.data.map(
+                                  (supplier: { id: number; name: string }) => (
+                                    <option
+                                      key={supplier.id}
+                                      value={supplier.id}
+                                    >
+                                      {supplier.name}
+                                    </option>
+                                  )
+                                )}
+                            </Select>
                           </FormControl>
 
                           <FormControl>
@@ -226,7 +240,7 @@ const AddRequest = () => {
                                 );
                               }}
                             >
-                              {Object.keys(categories).map((category) => (
+                              {Object.keys(foodCategories).map((category) => (
                                 <option key={category} value={category}>
                                   {category}
                                 </option>
@@ -234,7 +248,7 @@ const AddRequest = () => {
                             </Select>
                           </FormControl>
 
-                          {categories[form.watch("details")[0]?.category]
+                          {foodCategories[form.watch("details")[0]?.category]
                             ?.length > 0 && (
                             <FormControl width="50%">
                               <FormLabel>Subcategory</FormLabel>
@@ -250,7 +264,7 @@ const AddRequest = () => {
                                   );
                                 }}
                               >
-                                {categories[
+                                {foodCategories[
                                   form.watch("details")[0]?.category
                                 ]?.map((subcategory) => (
                                   <option key={subcategory} value={subcategory}>

@@ -12,8 +12,10 @@ const { pool, testConnection } = require('./util/dbConnection')
 const setupSwagger = require("./swagger");
 
 // pool.execute('select * from employees').then(([result, tableST])=>{
-    //     console.log(result)
-    // }).catch()
+//         console.log(result)
+//     }).catch()
+
+testConnection();
 
 const app = express();
 app.use(cors());
@@ -25,9 +27,14 @@ app.use(donationRouter);
 app.use(recipientRouter);
 app.use(inventoryRouter);
 setupSwagger(app);
-app.use(errorRouter);
+// app.use(errorRouter);
+
+app.get('/', (req, res) => {
+    res.send('Hello World')
+})
 
 const PORT = process.env.PORT;
-app.listen(3000, () => {
+app.listen(PORT, '192.168.0.34', () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
