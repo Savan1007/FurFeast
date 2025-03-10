@@ -19,6 +19,7 @@ import {
   useColorModeValue,
   Radio,
   RadioGroup,
+  useToast,
 } from "@chakra-ui/react";
 import Navbar from "../../../components/navbar";
 import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
@@ -35,6 +36,20 @@ const AddRequest = () => {
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const textColor = useColorModeValue("gray.600", "gray.400");
   const { data: request, mutate, isSuccess, status } = useCreateRequest();
+  const toast = useToast();
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast({
+        title: "Request Submited.",
+        // description: "Your food request has been successfully created.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      navigate('/requests');
+    }
+  }, [isSuccess, toast]);
   const getSuppliers = useFetchAllSuppliers();
 
   useEffect(() => {
@@ -358,7 +373,7 @@ const AddRequest = () => {
                 type="submit"
                 colorScheme="blue"
                 size="lg"
-                // isLoading={createMutation.isPending}
+                isLoading={status === "pending"}
                 leftIcon={<Plus size={20} />}
               >
                 Submit Request
