@@ -17,6 +17,7 @@ import {
   Tabs,
   Badge,
   useColorModeValue,
+  Skeleton,
 } from "@chakra-ui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RequestTable from "./request-table";
@@ -45,9 +46,9 @@ const Request = () => {
   const textColor = useColorModeValue("gray.600", "gray.400");
   const headingColor = useColorModeValue("gray.800", "white");
   
-  if (status === "pending") {
-    return <div>Loading...</div>;
-  }
+  // if (status === "pending") {
+  //   return <div>Loading...</div>;
+  // }
   console.log("requests", requests);
 
   const pendingRequests = requests?.data?.filter((req) => req.status === "pending") || [];
@@ -83,7 +84,7 @@ const Request = () => {
               New Request
             </Button>
           </Flex>
-
+          <Skeleton isLoaded={status === "success"}>
           <Card>
             <CardBody>
               <Tabs>
@@ -131,6 +132,7 @@ const Request = () => {
               </Tabs>
             </CardBody>
           </Card>
+          </Skeleton> 
         </Stack>
       </Box>
     </Navbar>

@@ -98,7 +98,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                 fontWeight="bold"
                 color={useColorModeValue("brand.600", "brand.300")}
               >
-                RHS Food Network
+                FurFeast
               </Text>
               <Stack direction="row" spacing={4}>
                 {links.map((link) => (

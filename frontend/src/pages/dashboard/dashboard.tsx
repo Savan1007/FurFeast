@@ -13,10 +13,10 @@ import Navbar from "../../components/navbar";
 import { Package, Clock, CheckCircle } from "lucide-react";
 
 const mockData = {
-  totalItems: 2451,
-  lowStock: 18,
-  pendingOrders: 64,
-  completedOrders: 832,
+  totalItems: 0,
+  lowStock: 0,
+  pendingOrders: 6,
+  completedOrders: 0,
   recentActivity: [
     {
       id: 1,
