@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      Supplier.hasMany(models.Donation,{foreignKey: 'supplier_id', onDelete:'SET NULL'})
     }
   }
   Supplier.init({
