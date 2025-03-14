@@ -5,8 +5,8 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class Donation extends Model {
     static associate(models) {
-      Donation.belongsTo(models.Supplier, { foreignKey: 'supplier_id', onDelete:'SET NULL' });
-      Donation.hasMany(models.DonationDetails, { foreignKey: 'donation_id', onDelete: 'CASCADE' });
+      Donation.belongsTo(models.Supplier, { foreignKey: 'supplier_id', onDelete:'SET NULL', as:'Supplier' });
+      Donation.hasMany(models.DonationDetails, { foreignKey: 'donation_id', onDelete: 'CASCADE', as:'DonationDetails' });
     }
   }
   Donation.init({
