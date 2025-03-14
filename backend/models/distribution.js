@@ -8,7 +8,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Distribution.init({
-    recipient_id: DataTypes.INTEGER,
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    recipient_id:{ type: DataTypes.INTEGER, references: { model: 'recipients', key: 'id' } },
     date_distributed: DataTypes.DATE,
     status: {type: DataTypes.ENUM('pending', 'delivered', 'canceled'),defaultValue: 'pending'},
     notes: DataTypes.TEXT

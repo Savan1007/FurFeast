@@ -9,20 +9,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   DistributionDetails.init({
-    distribution_id: { type: DataTypes.INTEGER, allowNull: false },
-    inventory_id: { type: DataTypes.INTEGER, allowNull: false },
-    quantity_distributed: { type: DataTypes.INTEGER, allowNull: false },
-    unit: { type: DataTypes.ENUM('kg', 'can', 'piece'), allowNull: false },
-    item_name: { type: DataTypes.STRING, allowNull: false },
-    category: { type: DataTypes.ENUM('food', 'non_food_item'), allowNull: false },
-    food_type: { type: DataTypes.ENUM('dog', 'cat'), allowNull: true },
-    food_form: { type: DataTypes.ENUM('dry', 'wet'), allowNull: true },
-    comments: { type: DataTypes.TEXT, allowNull: true },
-
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    distribution_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'distributions', key: 'id' } },
+    inventory_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'inventory', key: 'id' } },
+    quantity: { type: DataTypes.INTEGER, allowNull: false },
   }, {
     sequelize,
     modelName: 'DistributionDetails',
     tableName: 'distribution_details',
   });
-}
   return DistributionDetails;
+}
