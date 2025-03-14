@@ -121,7 +121,7 @@ class RecipientDAO {
    */
     static async deleteById(id, transaction){
         try{
-          const countDeleted = await Recipient.destroy({where: {id:id}},{ transaction})
+          const countDeleted = await Recipient.destroy({where: {id:id}, transaction})
           return countDeleted > 0
         }catch(error){
           console.error('DAO error (RecipientDAO, deleteById):', error.message)

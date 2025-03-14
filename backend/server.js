@@ -36,6 +36,6 @@ const recreateDatabaseTables = async ()=>{
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    // recreateDatabaseTables();
+    recreateDatabaseTables();
     console.log(`Server is running on port ${PORT}`);
 });
