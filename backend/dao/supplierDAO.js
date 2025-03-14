@@ -70,9 +70,14 @@ class SupplierDAO {
    * @returns {Promise<Supplier|null>} Found supplier or null
    * @throws {Error} Database query error
    */
-  static async findById(id) {
+  static async findById(id, include, transaction) {
     try {
-      return await Supplier.findByPk(id);
+      
+      const options ={
+        include: include || undefined,
+        transaction: transaction || undefined
+      }
+      return await Supplier.findByPk(id, options);
     } catch (error) {
       console.error("DAO Error (findById):", error);
       throw error;

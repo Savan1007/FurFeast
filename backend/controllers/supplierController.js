@@ -31,7 +31,8 @@ exports.create = async(req,res, next)=>{
 /** @type {import("express").RequestHandler} */
 exports.findByPk = async(req,res,next)=>{  
     try{
-        const supplier = await SupplierService.findById(req.params.id)
+        const include = req.query.include.split(',');
+        const supplier = await SupplierService.findById(req.params.id, include)
         res.status(200).json({success: true, message: '', data:supplier})
     }catch(error){
         res.status(404).json({success:false, message: error.message})
