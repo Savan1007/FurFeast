@@ -1,11 +1,12 @@
 
-// require("dotenv").config();
+require("dotenv").config();
 require("dotenv").config();
 const errorRouter = require('./routes/error')
 const supplierRouter = require('./routes/supplierRouts');
 const donationRouter = require('./routes/donationRouts');
 const recipientRouter = require('./routes/recipientRouts');
 const inventoryRouter = require('./routes/inventroyRouts');
+const ddRouter = require('./routes/donationDetailsRouts');
 const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('./models');
@@ -26,14 +27,15 @@ app.use(supplierRouter);
 app.use(donationRouter);
 app.use(recipientRouter);
 app.use(inventoryRouter);
+app.use(ddRouter);
 setupSwagger(app);
 app.use(errorRouter);
-const m = async ()=>{
+const recreateDatabaseTables = async ()=>{
     await sequelize.sync({ force: true });
 }
 
 const PORT = process.env.PORT;
-app.listen(3000, () => {
-    // m();
+app.listen(PORT, () => {
+    // recreateDatabaseTables();
     console.log(`Server is running on port ${PORT}`);
 });

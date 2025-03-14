@@ -31,9 +31,14 @@ class SupplierService{
      * @param {number} id - Supplier id
      * @returns {supplier|exception}  Throws exception if can not find any match with the id
      */
-    static async findById(id){
+    static async findById(id, include, transaction=undefined){
         try{
-            const supplier = await SupplierDAO.findById(id);
+            const associationMap = {
+                d: 'Donation',
+                dd: 'DonationDetails'
+            }
+            include = include.map(item=> associationMap[item]|| undefined)
+            const supplier = await SupplierDAO.findById(id, include, transaction);
             if(supplier){
                 return supplier;
             }else{
