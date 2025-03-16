@@ -43,7 +43,6 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
     try{
         const distId = req.params.id;
-        console.log('distId: ', distId);
         const distData = req.body;
         await DS.update(distId, distData);
         res.status(200).json({success: true, message: 'Distribution updated successfully'});

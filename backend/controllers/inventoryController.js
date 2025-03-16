@@ -1,31 +1,5 @@
 'use strict';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     InventoryItem:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         category:
- *           type: string
- *         food_type:
- *           type: string
- *         food_form:
- *           type: string
- *         item_name:
- *           type: string
- *         quantity:
- *           type: integer
- *         unit:
- *           type: string
- *         last_updated:
- *           type: string
- *           format: date-time
- */
-
 
 const InventoryService = require('../service/inventoryService');
 
