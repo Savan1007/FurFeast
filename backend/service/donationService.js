@@ -16,7 +16,8 @@ class DonationService {
     static async createDonation(donation, id) {
         const transaction = await sequelize.transaction();
         try {
-            const supplier = await supplierService.findById(id);
+            console.log('DonationService.createDonation:', donation, id);
+            const supplier = await supplierService.findById(donation.supplier_id);
             const newDonation = await DonationDAO.create(donation, {transaction});
             await newDonation.setSupplier(supplier, {transaction});
             await transaction.commit();
