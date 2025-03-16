@@ -8,6 +8,8 @@ const recipientRouter = require('./routes/recipientRouts');
 const inventoryRouter = require('./routes/inventroyRouts');
 const express = require('express');
 const cors = require('cors');
+const { sequelize } = require('./models');
+
 const { pool, testConnection } = require('./util/dbConnection')
 const setupSwagger = require("./swagger");
 
@@ -27,14 +29,19 @@ app.use(donationRouter);
 app.use(recipientRouter);
 app.use(inventoryRouter);
 setupSwagger(app);
-// app.use(errorRouter);
 
 app.get('/', (req, res) => {
     res.send('Hello World')
 })
 
+app.use(errorRouter);
+const m = async ()=>{
+    await sequelize.sync({ force: true });
+}
+
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
+  m();
     console.log(`Server is running on port ${PORT}`);
 });
 // app.listen(PORT, '192.168.0.34', () => {

@@ -5,20 +5,15 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class Donation extends Model {
     static associate(models) {
-      Donation.belongsTo(models.Supplier, { foreignKey: 'supplier_id' });
+      Donation.belongsTo(models.Supplier, { foreignKey: 'supplier_id', onDelete:'SET NULL' ,as: 'Supplier' });
+      Donation.hasMany(models.DonationDetails, { foreignKey: 'donation_id', onDelete: 'CASCADE', as: 'DonationDetails' });
     }
   }
   Donation.init({
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
     supplier_id: { type:DataTypes.INTEGER, references:{model:'suppliers', key: 'id',},onDelete: 'SET NULL'},
-    donation_category: { type: DataTypes.ENUM("food", "miscellaneous"), allowNull: false },
-    food_type: { type: DataTypes.ENUM("dog", "cat"), allowNull: true },
-    food_form: { type: DataTypes.ENUM("dry", "wet"), allowNull: true },
-    item_name: { type: DataTypes.ENUM("collar", 'toy'), allowNull: true },
-    quantity: { type: DataTypes.INTEGER, allowNull: true },
-    unit: { type: DataTypes.ENUM("kg", "can", "piece"), allowNull: true },
     date_received: { type: DataTypes.DATE, allowNull: true },
-    status: { type: DataTypes.ENUM("pending", "received", "processed"), defaultValue: "pending" },
+    status: { type: DataTypes.ENUM("pending", "received", "canceled"), defaultValue: "pending" },
     notes: DataTypes.TEXT
   },
   {

@@ -56,7 +56,8 @@ const Recipient = require('./recipient')(sequelize, Sequelize.DataTypes);
 const Inventory = require('./inventory')(sequelize, Sequelize.DataTypes);
 const Distribution = require('./distribution')(sequelize, Sequelize.DataTypes);
 const Log = require('./log')(sequelize, Sequelize.DataTypes);
-
+const DonationDetails = require('./donationDetails')(sequelize, Sequelize.DataTypes);
+const DistributionDetails = require('./distributionDetails')(sequelize, Sequelize.DataTypes);
 const db = {
   sequelize,
   Sequelize,
@@ -66,6 +67,8 @@ const db = {
   Distribution,
   Inventory,
   Log,
+  DonationDetails,
+  DistributionDetails
 };
 
 // Run associations if needed
