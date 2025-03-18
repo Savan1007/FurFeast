@@ -14,26 +14,23 @@ class DDsService {
 
     static async findById(id) {
         try {
-
-            const distributionDetails = await DDsDAO.findById(id);
-            if(!distributionDetails){
-                throw new Error('DistributionDetails Not Found.');
-            }
-            return distributionDetails
+            return await DDsDAO.findById(id);
         } catch (error) {
             console.error("Service error, (distributionDetailsService, findById())", error.message);
             throw error;
         }
     }
 
-    static async create(distributionDetails) {
-        const transaction = await sequelize.transaction();
+    static async create(distributionDetails, transaction = undefined) {
+        let flag = false;
+        if (!transaction){ transaction = await sequelize.transaction(); flag = true; }
         try {
+            //helper for setting status. 
             const createdDistributionDetails = await DDsDAO.create(distributionDetails, transaction);
-            await transaction.commit();
+            flag && await transaction.commit();
             return createdDistributionDetails;
         } catch (error) {
-            await transaction.rollback();
+            if(flag) await transaction.rollback();
             console.error("Service error, (distributionDetailsService, create())", error.message);
             throw error;
         }
@@ -43,6 +40,7 @@ class DDsService {
         const transaction = await sequelize.transaction();
         try {
             const distribution = await this.findById(id);
+            if (!distribution) { throw new Error('Distribution not found!') }
             distributionDetails.id = distribution.id;
             const updatedDist  = await DDsDAO.update(distributionDetails, transaction);
             await transaction.commit();
@@ -57,6 +55,7 @@ class DDsService {
         const transaction = await sequelize.transaction()
         try{
             const distribution = await this.findById(id);
+            if(!distribution){throw new Error('Distribution not found!')}
             const idDetelet = await DDsDAO.delete(distribution, transaction);
             await transaction.commit();
             return idDetelet;
@@ -66,6 +65,11 @@ class DDsService {
             throw error;
         }
     }
+    static async setStatus(){
+
+    }
 }
+
+
 
 module.exports = DDsService;

@@ -64,3 +64,14 @@ exports.delete = async (req, res) => {
         res.status(500).json({ success:false, message: error.message});
     }
 }
+
+exports.createFlow = async (req, res) => {
+    try{
+        const data = req.body;
+        const result = await DS.createFlow(data);
+        res.status(201).json({success: true, data: result, message: `Distribution created successfully`});
+    }catch(error){
+        console.error('Controller error, (distributionController, createFlow()): ', error.message);
+        res.status(500).json({ success:false, message: error.message});
+    }
+}

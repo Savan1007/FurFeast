@@ -72,4 +72,15 @@ exports.update = async(req, res, next)=>{
     }
 }
 
+exports.createFlow = async(req, res, next)=>{
+    try{
+        const {createdDonation, createdDonationDetails, createdSupplier} = await donationService.createFlow(req.body);
+        res.status(201).json({success:true, message:"request created successfully", data:{createdDonation, createdDonationDetails, createdSupplier}})
+    }catch(error){
+        console.error('Controller error, (donationController, createFlow())', error.message);
+        res.status(500).json({success:false, message: error.message});
+
+    }
+}
+
 

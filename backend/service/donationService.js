@@ -1,6 +1,7 @@
 
 const DonationDAO = require('../dao/donationDAO');
 const { sequelize } = require('../models');
+const DonationDetailsService = require('./donationDetailsService');
 const SupplierService = require('./supplierService');
 
 class DonationService{
@@ -26,32 +27,23 @@ class DonationService{
                 dd: 'DonationDetails',
                 sp: 'Supplier'
             }
-            include = include?.map(item=> associationMap[item] || item)
-            const donation = await DonationDAO.findById(id, include, transaction);
-            if(donation){
-                return donation;
-            }else{
-                throw new Error("Donation Not Found.")
-            }
+            include = include?.map(item=> associationMap[item] || item);   
+            return  await DonationDAO.findById(id, include, transaction);
         }catch(error){
             console.error('DAO error(donationService, findById()): ', error.message);
             throw error;
         }
     }
 
-    static async create(id, donation, details= undefined){
-        const transaction = await sequelize.transaction();
+    static async create(donation, transaction=undefined){
+        let flag = false
+        if(!transaction){flag = true;transaction = await sequelize.transaction();}
         try{
-             const supplier = await SupplierService.findById(id,false ,transaction);
-             donation.supplier_id = id;
              const newDonation = await DonationDAO.create(donation, transaction);
-            
-            // loginc for adding details !!! details is a array of donations 
-            // const newDetails = await DonationDetailsService.create(details, transaction)
-             await transaction.commit();
+            if(flag){await transaction.commit();}
              return newDonation;
         }catch(error){
-            await transaction.rollback();
+            if(flag){await transaction.rollback();}
             console.error('Service error (donationService create()):', error.message, error.errors?.map(e => ({
                 message: e.message,
                 path: e.path
@@ -64,6 +56,7 @@ class DonationService{
         const transaction = await sequelize.transaction();
         try{
             const oldDonation = await this.findById(id, undefined, transaction);
+            if(!oldDonation){throw new Error('Donation Not Found!')}
             const newDonation = await DonationDAO.update(oldDonation, data, transaction);
             await transaction.commit();
             return newDonation;
@@ -78,6 +71,7 @@ class DonationService{
         const transaction = await sequelize.transaction();
         try{
             const donation = await this.findById(id, undefined, transaction);
+            if(!donation){throw new Error('Donation Not Found!')}
             const isDeleted = await DonationDAO.deleteById(id, transaction);
             await transaction.commit();
             return isDeleted;
@@ -86,7 +80,43 @@ class DonationService{
             await transaction.rollback();
             throw error;
         }
+    }
 
+    static async createFlow(data){
+        const transaction = await sequelize.transaction();
+        try{
+            const {donation, donationDetails, supplier} = data;
+            let createdSupplier, createdDonationDetails;
+            if(!donation || !donationDetails || !supplier){throw new Error('Invalid data.');}
+            if(!supplier.id ){
+                createdSupplier = await SupplierService.createSupplier(supplier, transaction);
+                donation.supplier_id = createdSupplier.id;
+                createdSupplier.donation_count += 1
+            }else{
+                createdSupplier = await SupplierService.findById(supplier.id, undefined, transaction);
+                if(!createdSupplier){throw new Error('Supplier not found.')}
+                createdSupplier.donation_count += 1
+                donation.supplier_id = createdSupplier.id;
+            }
+            const createdDonation = await this.create(donation,transaction);
+            if(Array.isArray(donationDetails)){
+                donationDetails.forEach(item=>{
+                    item.donation_id = createdDonation.id;
+                })
+                createdDonationDetails = await DonationDetailsService.create(donationDetails, transaction);
+            }else{
+                donationDetails.donation_id = createdDonation.id;
+                createdDonationDetails = await DonationDetailsService.create(donationDetails, transaction);
+            }
+            await transaction.commit();  
+            return {createdDonation, createdDonationDetails, createdSupplier}
+
+        }catch(error){
+            await transaction.rollback();
+            console.error("Service error, (donationservice, createFlow())", error.message);
+            throw error;
+        }
+       
     }
     
 }

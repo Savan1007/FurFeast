@@ -8,6 +8,7 @@ const router = express.Router();
 router.get('/donation', donationController.findAll);
 router.get('/donation/:id', donationController.findById)
 router.post('/donation', donationController.create);
+router.post('/donation/request', donationController.createFlow);
 router.delete('/donation/:id', donationController.delete);
 
 

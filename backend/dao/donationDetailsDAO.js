@@ -26,11 +26,11 @@ class DonationDetailsDAO {
 
     static async create(donationDetails, transaction) {
         try {
-            if(donationDetails && donationDetails.length > 1){
+            if(donationDetails && Array.isArray(donationDetails) && donationDetails.length > 1){
                 const newDonationDetails = await DonationDetails.bulkCreate(donationDetails, {transaction});
                 return newDonationDetails;
             }
-            const newDonationDetails = await DonationDetails.create(donationDetails[0], {transaction});
+            const newDonationDetails = await DonationDetails.create(donationDetails, {transaction});
             return newDonationDetails;
         } catch (error) {
             console.error('DonationDetailsDAO error (create):', error.message);

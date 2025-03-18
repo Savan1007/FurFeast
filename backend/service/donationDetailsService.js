@@ -20,12 +20,7 @@ class DonationDetailsService {
     static async findById(id, include){
         try{
             include = associationMap(include);
-            const donationDetails = await DDsDAO.findById(id, include);
-            if(donationDetails){
-                return donationDetails;
-            }else{
-                throw new Error("DonationDetails Not Found.")
-            }
+            return await DDsDAO.findById(id, include);   
         }catch(error){
             console.error('Service error(donationDetailsService, findById): ', error.message);
             throw error;
@@ -35,14 +30,15 @@ class DonationDetailsService {
 
 
 
-    static async create(details) {
-        const transaction = await sequelize.transaction();  
+    static async create(details, transaction=undefined) {
+        let flag = false;
+        if(!transaction){flag = true; transaction = await sequelize.transaction();}
         try {
             const newDetails = await DDsDAO.create(details, transaction);
-            await transaction.commit();
+            if(flag){ await transaction.commit();}
             return newDetails;
         } catch (error) {
-            await transaction.rollback();
+            if(flag){ await transaction.rollback();}  
             console.error('Service error (donationDetailsService create()):', error.message);
             throw error
         }
@@ -51,7 +47,8 @@ class DonationDetailsService {
     static async deleteById(ids){
         const transaction = await sequelize.transaction();
         try{
-            await DDsDAO.findById()
+            const donationDetails = await this.findById(ids);
+            if(!donationDetails){throw new Error('DonationDetails Not Found');}
             const isDeleted = await DDsDAO.deleteById(ids, transaction);
             await transaction.commit();
             return isDeleted;
@@ -67,6 +64,7 @@ class DonationDetailsService {
         const transaction = await sequelize.transaction();
         try{
             const oldDDs = await this.findById(id);
+            if(!oldDDs){throw new Error('DonationDetails Not Found');}
             const newDDs = await DDsDAO.update(oldDDs, data, transaction);
             await transaction.commit();
             return newDDs;

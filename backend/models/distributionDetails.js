@@ -13,6 +13,9 @@ module.exports = (sequelize, DataTypes) => {
     distribution_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'distributions', key: 'id' } },
     inventory_id: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'inventory', key: 'id' } },
     quantity: { type: DataTypes.INTEGER, allowNull: false },
+    requested: {type: DataTypes.INTEGER,allowNull: false,},
+    provided: {type: DataTypes.INTEGER,allowNull: false,defaultValue: 0,},
+    status: {type: DataTypes.ENUM('pending','partially_fulfilled','fulfilled','not_fulfilled','rejected'),defaultValue: 'pending'},
   }, {
     sequelize,
     modelName: 'DistributionDetails',
