@@ -15,9 +15,9 @@ class RecipientService{
    * @returns {Promise<Recipient>} Newly created recipient
    * @throws {Error} Propagates database/validation errors
    */
-    static async createRecipient(data){
-       
-        const transaction = await sequelize.transaction();
+    static async createRecipient(data, transaction = undefined){
+        let flag = false;
+       if(!transaction) {transaction = await sequelize.transaction(); flag = true;}
         try{
             if(!data.email || !data.phone){
                 throw new Error('Phone number or Email is missing!')
@@ -25,13 +25,13 @@ class RecipientService{
             const ifExist = await this.findByEmailOrPhone({email:data.email, phone:data.phone},transaction);
             if(!ifExist){
                 const recipient = await RecipientDAO.create(data, transaction);
-                await transaction.commit();
+                flag && await transaction.commit();
                 return recipient;
             }else{
                 throw new Error('There is a recipient with privided email or phone.')
             }
         }catch(error){
-            await transaction.rollback();
+            if(flag) await transaction.rollback();
             console.error('Service Error (createRecipient):', error.message);
             throw error;
         }
@@ -81,12 +81,7 @@ class RecipientService{
     static async findById(id){
         // return all the recieves till now!!!! as well if the option is true!!!
         try{
-            const recipient = await RecipientDAO.findById(id);
-            if(recipient){
-                return recipient;
-            }else{
-                 throw new Error('Recipient Not Found.')
-            }
+            return await RecipientDAO.findById(id);       
         }catch(error){
             console.log('RecipientService Error (findById):', error.message)
             throw error
@@ -106,6 +101,7 @@ class RecipientService{
         try{
             // add validation for do not change the id!
             const oldRecipient = await this.findById(id);
+            if(!oldRecipient){throw new Error('Recipient Not Found.');}
             const newRecipient = await RecipientDAO.update(oldRecipient, data, transaction);
             await transaction.commit();
             return newRecipient;
@@ -134,6 +130,7 @@ class RecipientService{
         const transaction = await sequelize.transaction();
         try{
             const recipient = await this.findById(id);
+            if(!recipient){throw new Error('Recipient Not Found.');}
             const recipientDeleted = RecipientDAO.deleteById(id,transaction);
             await transaction.commit();
             return recipientDeleted;

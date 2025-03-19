@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     recipient_id:{ type: DataTypes.INTEGER, references: { model: 'recipients', key: 'id' } },
     date_distributed: DataTypes.DATE,
-    status: {type: DataTypes.ENUM('pending', 'delivered', 'canceled'),defaultValue: 'pending'},
+    status: {type: DataTypes.ENUM('pending','approved','rejected','processed'),defaultValue: 'pending'},
     notes: DataTypes.TEXT
   }, {
     sequelize,
