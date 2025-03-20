@@ -58,6 +58,11 @@ const Distribution = require('./distribution')(sequelize, Sequelize.DataTypes);
 const Log = require('./log')(sequelize, Sequelize.DataTypes);
 const DonationDetails = require('./donationDetails')(sequelize, Sequelize.DataTypes);
 const DistributionDetails = require('./distributionDetails')(sequelize, Sequelize.DataTypes);
+const User = require('./user')(sequelize, Sequelize.DataTypes);
+const Role = require('./role')(sequelize, Sequelize.DataTypes);
+const Permission = require('./permission.js')(sequelize, Sequelize.DataTypes);
+const RolePermission = require('./rolePermission.js')(sequelize, Sequelize.DataTypes);
+const UserRole = require('./userRole.js')(sequelize, Sequelize.DataTypes);
 const db = {
   sequelize,
   Sequelize,
@@ -68,7 +73,12 @@ const db = {
   Inventory,
   Log,
   DonationDetails,
-  DistributionDetails
+  DistributionDetails,
+  User,
+  Role,
+  Permission,
+  RolePermission,
+  UserRole
 };
 
 // Run associations if needed

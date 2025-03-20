@@ -1,6 +1,5 @@
 
 require("dotenv").config();
-require("dotenv").config();
 const errorRouter = require('./routes/error')
 const supplierRouter = require('./routes/supplierRouts');
 const donationRouter = require('./routes/donationRouts');
@@ -36,10 +35,6 @@ app.use(distributionRouter);
 app.use(distributionDetailsRouter);
 setupSwagger(app);
 
-app.get('/', (req, res) => {
-    res.send('Hello World')
-})
-
 app.use(errorRouter);
 const recreateDatabaseTables = async (option)=>{
     await sequelize.sync(option);
@@ -47,10 +42,7 @@ const recreateDatabaseTables = async (option)=>{
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    // recreateDatabaseTables({alter: true});
+    recreateDatabaseTables({alter: true});
     console.log(`Server is running on port ${PORT}`);
 });
-// app.listen(PORT, '192.168.0.34', () => {
-//     console.log(`Server is running on port ${PORT}`);
-// });
 
