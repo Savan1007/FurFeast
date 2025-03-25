@@ -101,7 +101,6 @@ class AuthService {
     }
     try {
       const existingUser = await UserDAO.findByEmailOrUsername(emailOrUsername, session);
-      console.log(existingUser)
       if (!existingUser) throw new Error('Invalid credentials');
 
       const passwordMatch = await bcrypt.compare(String(password), existingUser.password);
@@ -110,7 +109,6 @@ class AuthService {
       const accessToken = this.generateAccessToken(existingUser);
       const refreshToken = this.generateRefreshToken(existingUser);
       const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      console.log('id here ',existingUser._id)
       await UserDAO.updateRefreshToken(existingUser._id, refreshToken, refreshTokenExpiry, session);
       if (flag && session) {
         await session.commitTransaction();
@@ -183,6 +181,16 @@ class AuthService {
       throw error;
     }
   }
+
+  static async findByEmailOrUsername(emailOrUsername) {
+      try {
+        const result = await UserDAO.findByEmailOrUsername(emailOrUsername);
+        return result
+      } catch (error) {
+        console.error('Service error (AuthService, findByEmailOrUsername):', error.message);
+        throw error;
+      }
+    }
 
   // static async createUser( userData, options = {}, session = undefined) {
   //   const { sendVerificationEmail = false, sendWelcomeEmail = false, createdBy = null } = options;

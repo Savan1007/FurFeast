@@ -21,7 +21,8 @@ class AuthController {
       const { email, password } = req.body;
 
       const { accessToken, refreshToken,refreshTokenExpiry } = await AuthService.login(email, password);
-      const user = await AuthService.findByEmail(email);
+      const user = await AuthService.findByEmailOrUsername(email);
+      console.log(user)
       const maxAge = refreshTokenExpiry.getTime() - Date.now();
 
     

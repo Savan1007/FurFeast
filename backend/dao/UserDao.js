@@ -24,7 +24,6 @@ class UserDAO {
       const result = await User.findOne({
         $or: [{ email: emailOrUsername }, { username: emailOrUsername }]
       }).populate('roles').session(session);
-      console.log('dao result',result)
       return result
     } catch (error) {
       console.error('DAO error (UserDAO, findByEmailOrUsername):', error.message);
@@ -34,7 +33,6 @@ class UserDAO {
 
   static async updateRefreshToken(id, refreshToken, expiryDate, session=undefined) {
     try {
-      console.log('inside update refresh',id)
       const result = await User.findByIdAndUpdate(
         id,
         {
@@ -43,7 +41,6 @@ class UserDAO {
         },
         { new: true }
       ).session(session);
-      console.log('result inside update refresh token', result)
       return result;
     } catch (error) {
       console.error('DAO error (UserDAO, updateRefreshToken):', error.message);
