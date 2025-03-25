@@ -11,6 +11,7 @@ const errorRouter = require('./routes/error');
 // const distributionDetailsRouter = require('./routes/distributionDetailsRouts');
 const authRouter = require('./routes/authRouts');
 const setupSwagger = require("./swagger/swagger");
+const roleRoutes = require('./routes/role');
 
 const express = require('express');
 const cors = require('cors');
@@ -25,6 +26,7 @@ app.use(cors());
 app.use(express.urlencoded({extended:true}))
 
 app.use(authRouter)
+app.use(roleRoutes);
 // app.use(supplierRouter);
 // app.use(donationRouter);
 // app.use(recipientRouter);
@@ -49,7 +51,7 @@ app.use(errorRouter);
 
 async function startServer() {
     try {
-      await mongoose.connect('process.env.MONGO_URI');
+      await mongoose.connect(process.env.MONGO_URI);
       console.log('MongoDB connected');
   
       await initializeDefaultRoles();

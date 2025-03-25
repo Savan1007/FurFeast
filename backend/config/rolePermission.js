@@ -3,7 +3,7 @@ module.exports = {
     {
     name: 'superAdmin',
     description: 'Has all system privileges',
-    permissions: ['manageUsers', 'manageInventory', 'viewLogs', 'approveRequests', 'createRequest', 'viewInventory']
+    permissions: ['manageUsers', 'manageInventory', 'viewLogs', 'approveRequests', 'createRequest', 'viewInventory','viewUsers']
     },
     {
     name: 'admin',

@@ -101,6 +101,7 @@ class AuthService {
     }
     try {
       const existingUser = await UserDAO.findByEmailOrUsername(emailOrUsername, session);
+      console.log(existingUser)
       if (!existingUser) throw new Error('Invalid credentials');
 
       const passwordMatch = await bcrypt.compare(String(password), existingUser.password);
@@ -109,7 +110,7 @@ class AuthService {
       const accessToken = this.generateAccessToken(existingUser);
       const refreshToken = this.generateRefreshToken(existingUser);
       const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
+      console.log('id here ',existingUser._id)
       await UserDAO.updateRefreshToken(existingUser._id, refreshToken, refreshTokenExpiry, session);
       if (flag && session) {
         await session.commitTransaction();
@@ -253,9 +254,9 @@ class AuthService {
         userData.username = userData.email?.split('@')[0];
       }
   
-      const defaultRole = await RoleDAO.findByName('supplier', session);
-      if (!defaultRole) throw new Error('Default user role not found');
-      userData.roles = [defaultRole];
+      // const defaultRole = await RoleDAO.findByName('supplier', session);
+      // if (!defaultRole) throw new Error('Default user role not found');
+      // userData.roles = [defaultRole];
       const userModel = new User({...userData ,
         createdBy: createdBy
       });
