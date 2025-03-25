@@ -1,5 +1,5 @@
 'use strict'
-const DServiceDAO = require('../dao/distributionDAO');
+const distributionDAO = require('../dao/distributionDAO');
 const RecipientService = require('./recipientService');
 const DDsSetvice = require('./distributionDetailsService');
 const { sequelize } = require('../models');
@@ -8,10 +8,19 @@ const InventoryService = require('./inventoryService');
 
 class DistributionService{
   
-    static async findAll(include, transaction=undefined){
+    static async findAll(query, transaction=undefined){
         try{
-            include = associationMap(include);  
-            return await DServiceDAO.findAll(include,transaction);
+            const {status,page = 1,limit = 10,sort = 'createdAt',order = 'DESC',includeDetails = 'false',includeRecipient = 'false',} = query;
+            const where = {};
+            if (status) where.status = status;
+          
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+            const include = [];
+          
+            if (includeDetails === 'true') {include.push('DistributionDetails');}
+            if (includeRecipient === 'true') {include.push('Recipient');}
+          
+            return await distributionDAO.findAll({where,limit: parseInt(limit),offset,order: [[sort, order.toUpperCase()]],include,page: parseInt(page), transaction});
         }catch(error){
             console.error('Service error, (DistributionService, findAll()): ', error.message);
             throw error;
@@ -22,7 +31,7 @@ class DistributionService{
 
         try{
             include = associationMap(include);   
-            return await DServiceDAO.findById(id, include, transaction);
+            return await distributionDAO.findById(id, include, transaction);
         }catch(error){
             console.error('Service error, (DistributionService, findById()): ', error.message);
             throw error;
@@ -39,30 +48,35 @@ class DistributionService{
             const recipientId = distribution.recipient_id;
             const recipient = await RecipientService.findById(recipientId);
             if(!recipient){throw new Error('Recipient not found!')}
-            const newDistribution = await DServiceDAO.create(distribution, transaction);
+            const newDistribution = await distributionDAO.create(distribution, transaction);
 
-            flag && transaction.commit();
+            flag && await transaction.commit();
             return newDistribution;
           
         }catch(error){
-            if(flag) transaction.rollback();
+            flag && await transaction.rollback();
             console.error('Service error, (DistributionService, create()): ', error);
             throw error;
         }
     }
 
-    static async update(id, distribution){
-        const transaction = await sequelize.transaction();
+    static async update(id, distribution, transaction=undefined){
+        let flag = false;
+        if(!transaction) {flag = true;transaction = await sequelize.transaction();}
         try{
             const recepient = await RecipientService.findById(distribution.recipient_id);
             if(!recepient){throw new Error('Recipient not found!')}
-            await this.findById(id);
-            distribution.id = id;
-            transaction.commit();
-            return await DServiceDAO.update(distribution, transaction);
-            
+
+            const existingDist = await this.findById(id);
+            if(!existingDist) throw new Error('Distribution not found!');
+
+            distribution.id = existingDist.id;
+
+            const updatedDist = await distributionDAO.update(distribution, transaction);
+            flag && await transaction.commit();
+            return updatedDist
         }catch(error){
-            transaction.rollback();
+            flag && await transaction.rollback();
             console.error('Service error, (DistributionService, update()): ', error);
             throw error;
         }
@@ -73,12 +87,12 @@ class DistributionService{
         try{
             const distribution = await this.findById(id);
             if(!distribution){throw new Error('Distribution not found!')}
-            const {dataValues} = await DServiceDAO.delete(distribution, transaction);
-            transaction.commit();
+            const {dataValues} = await distributionDAO.delete(distribution, transaction);
+            await transaction.commit();
             return dataValues;
             
         }catch(error){
-            transaction.rollback();
+            await transaction.rollback();
             console.error('Service error, (DistributionService, delete()): ', error);
             throw error;
         }
@@ -109,6 +123,7 @@ class DistributionService{
             }
             distributionDetails = await DDsSetvice.create(distributionDetails, transaction);
             await transaction.commit();
+            return {recipient, distribution, distributionDetails}
 
         } catch (error) {
             await transaction.rollback();

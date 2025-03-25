@@ -5,9 +5,8 @@ const donationService = require('../service/donationService');
 /** @type {import("express").RequestHandler} */
 exports.findAll = async (req, res, next)=>{
     try{
-        const include = req.query.include?.split(',');
-        const donations = await donationService.findAll(include);
-        res.status(200).json({success:true, message:'', data: donations})
+        const result = await donationService.findAll(req.query);
+        res.status(200).json({success:true, message:'', data: result})
     }catch(error){
         console.error('DonationController error (findAll): ', error.message);
         res.status(500).json({success:false, message:error.message})

@@ -4,9 +4,8 @@ const DS = require('../service/distributionService');
 
 
 exports.findAll = async (req, res) => {
-    try{
-        const include = req.query?.include?.split(',');
-        const result = await DS.findAll(include);
+    try{ 
+         const result = await DS.findAll(req.query);
         res.status(200).json({success: true, data: result});
     }catch(error){
         console.error('Controller error, (distributionController, findAll()): ', error.message);
@@ -68,8 +67,8 @@ exports.delete = async (req, res) => {
 exports.createFlow = async (req, res) => {
     try{
         const data = req.body;
-        const result = await DS.createFlow(data);
-        res.status(201).json({success: true, data: result, message: `Distribution created successfully`});
+        const {recipient, distribution, distributionDetails } = await DS.createFlow(data);
+        res.status(201).json({success: true, data: {recipient, distribution, distributionDetails}, message: `Distribution created successfully`});
     }catch(error){
         console.error('Controller error, (distributionController, createFlow()): ', error.message);
         res.status(500).json({ success:false, message: error.message});

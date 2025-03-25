@@ -1,37 +1,11 @@
-'use strict';
-const { Model } = require('sequelize');
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+const Permission = require('./Permission')
 
-module.exports = (sequelize, DataTypes) => {
-  class Role extends Model {
-    static associate(models) {
-    
-      Role.belongsToMany(models.User, {
-        through: models.UserRole,
-        foreignKey: 'role_id',
-        otherKey: 'user_id',
-        as: 'User'
-      });
+const RoleSchema = new Schema({
+  name: { type: String, unique: true, required: true },
+  description: String,
+  permissions: [{ type: Schema.Types.ObjectId, ref: 'Permission' }]
+});
 
-    
-      Role.belongsToMany(models.Permission, {
-        through: models.RolePermission,
-        foreignKey: 'role_id',
-        otherKey: 'permission_id',
-        as: 'Permission'
-      });
-    }
-  }
-
-  Role.init({
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    name: { type: DataTypes.STRING, unique: true, allowNull: false },
-    description: { type: DataTypes.STRING, allowNull: true },
-  }, {
-    sequelize,
-    modelName: 'Role',
-    tableName: 'roles',
-    timestamps: false,
-  });
-
-  return Role;
-};
+module.exports = mongoose.model('Role', RoleSchema);

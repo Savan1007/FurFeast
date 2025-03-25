@@ -6,14 +6,20 @@ const SupplierService = require('./supplierService');
 
 class DonationService{
     
-    static async findAll(include){
+    static async findAll(query, transaction=undefined){
         try{
-            const associationMap = {
-                dd: 'DonationDetails',
-                sp:'Supplier'
-            }
-            include = include?.map(item=> associationMap[item] || undefined)
-            return await DonationDAO.findAll(include);
+            const {status,page = 1,limit = 10,sort = 'createdAt',order = 'DESC',includeDetails = 'false',includeSupplier = 'false',} = query;
+            const where = {};
+            if (status) where.status = status;
+          
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+            const include = [];
+          
+            if (includeDetails === 'true') {include.push('DonationDetails');}
+            if (includeSupplier === 'true') {include.push('Supplier');}
+          
+            return await DonationDAO.findAll({where,limit: parseInt(limit),offset,order: [[sort, order.toUpperCase()]],include,page: parseInt(page), transaction});
+           
         }catch(error){
             console.error("Service error (donationService , findAll()): ", error.message);
             throw error;

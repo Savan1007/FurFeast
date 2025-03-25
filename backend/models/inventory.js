@@ -1,29 +1,15 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
-  class Inventory extends Model {
-    
-    static associate(models) {
-      Inventory.hasMany(models.DistributionDetails, { foreignKey: 'inventory_id', as: 'DistributionDetails' });
-      Inventory.hasMany(models.DonationDetails, { foreignKey: 'inventory_id', as: 'DonationDetails' });
-    }
-  }
-  Inventory.init({
-    id:{type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true,},
-    category: {type: DataTypes.ENUM('food', 'miscellaneous'), allowNull: false,},
-    food_type: {type: DataTypes.ENUM('dog', 'cat'),allowNull: true,},
-    food_form: {type: DataTypes.ENUM('dry', 'wet'),allowNull: true,},
-    item_name: {type: DataTypes.ENUM('collar', 'toy'),allowNull: true,},
-    quantity: {type: DataTypes.INTEGER,defaultValue: 0,},
-    unit: {type: DataTypes.ENUM('kg', 'can', 'piece'), allowNull: true,},
-    last_updated: {type: DataTypes.DATE,defaultValue: DataTypes.NOW},
-  }, {
-    sequelize,
-    modelName: 'Inventory',
-    tableName: 'inventory',
-    updatedAt: 'last_updated'
-  });
-  return Inventory;
-};
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const InventorySchema = new Schema({
+  //item_type, item_name,
+  category: { type: String, enum: ['food', 'miscellaneous'], required: true },
+  food_type: { type: String, enum: ['dog', 'cat'] },
+  food_form: { type: String, enum: ['dry', 'wet'] },
+  item_name: { type: String, enum: ['collar', 'toy'] },
+  quantity: { type: Number, default: 0 },
+  unit: { type: String, enum: ['kg', 'can', 'piece'] },
+  lastUpdated: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Inventory', InventorySchema);
