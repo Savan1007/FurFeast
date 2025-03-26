@@ -2,6 +2,8 @@
 require("dotenv").config();
 const AuthService = require('../service/AuthService');
 const UserDAO = require('../dao/UserDao');
+const { validationResult } = require("express-validator");
+
 
 class AuthController {
 
@@ -18,11 +20,14 @@ class AuthController {
 
   static async login(req, res) {
     try {
-      const { email, password } = req.body;
+      const errors = validationResult(req).array();
+      if(errors.length>0){
+        throw { status: 400, errors: errors };
+      }
+      const { emailOrUsername, password } = req.body;
 
-      const { accessToken, refreshToken,refreshTokenExpiry } = await AuthService.login(email, password);
-      const user = await AuthService.findByEmailOrUsername(email);
-      console.log(user)
+      const { accessToken, refreshToken,refreshTokenExpiry } = await AuthService.login(emailOrUsername, password);
+      const user = await AuthService.findByEmailOrUsername(emailOrUsername);
       const maxAge = refreshTokenExpiry.getTime() - Date.now();
 
     
@@ -43,6 +48,9 @@ class AuthController {
       });
 
     } catch (error) {
+      if (error?.errors) {
+        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
+      }
       console.error('Login Error:', error.message);
       res.status(401).json({ success: false, error: error.message });
     }
@@ -69,9 +77,16 @@ class AuthController {
 
   static async register(req, res) {
     try {
+      const errors = validationResult(req).array();
+      if(errors.length>0){
+        throw { status: 400, errors: errors };
+      }
       const user = await AuthService.createUser(req.body, { sendVerificationEmail: true });
       res.status(201).json({ success: true, message: 'Registration successful. Please check your email to verify your account.' });
     } catch (error) {
+      if (error?.errors) {
+        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
+      }
       console.error('AuthController, User Creation Error:', error.message);
       res.status(400).json({ success: false, message: error.message });
     }
@@ -81,9 +96,16 @@ class AuthController {
   
   static async create(req, res) {
     try {
+      const errors = validationResult(req).array();
+      if(errors.length>0){
+        throw { status: 400, errors: errors };
+      }
       const user = await AuthService.createUser(req.body, { sendWelcomeEmail: true, createdBy: req.user.id });
       res.status(201).json({ success: true, message: 'User created successfully' });
     } catch (error) {
+      if (error?.errors) {
+        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
+      }
       console.error('AuthController, User Creation Error:', error.message);
       res.status(400).json({ success: false, message: error.message });
     }
