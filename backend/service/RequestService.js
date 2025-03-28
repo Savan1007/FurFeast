@@ -2,7 +2,9 @@
 
 const RequestDAO = require('../dao/RequestDao');
 const InventoryService = require('./InventoryService');
+const Request = require('../models/Request')
 const RequestDetailsService = require('./requestDetailsService');
+const mongoose = require('mongoose');
 
 class RequestService {
   static async findAll(query) {
@@ -25,7 +27,7 @@ class RequestService {
       const populate = [];
 
       if (includeDetails === 'true') populate.push('requestDetails');
-      if (includeUser === 'true') populate.push('user');
+      if (includeUser === 'true') populate.push('requestedBy');
 
       return await RequestDAO.findAll({
         where,
@@ -42,12 +44,10 @@ class RequestService {
     }
   }
 
-  static async findById(id, includes = []) {
-    //populate by default every thing
+  static async findById(id) {
     try {
-      const populate = includes.includes('user') || includes.includes('requestDetails')
-        ? includes.join(' ')
-        : '';
+      const populate = 'requestDetails requestedBy'
+       
       return await RequestDAO.findById(id, populate);
     } catch (error) {
       console.error('Service error (RequestService, findById):', error.message);
@@ -55,25 +55,49 @@ class RequestService {
     }
   }
 
-  static async create(data) {
+  static async create(data, session=undefined) {
+    let ownSession = false;
+    if (!session) {ownSession = true;session = await mongoose.startSession();session.startTransaction();}
     try {
-      return await RequestDAO.create(data);
+      const result = await RequestDAO.create(data, session);
+      if(ownSession&& session){ await session.commitTransaction();session.endSession();}
+      return result;
     } catch (error) {
+      if (ownSession && session) {await session.abortTransaction();session.endSession();}
       console.error('Service error (RequestService, create):', error.message);
       throw error;
     }
   }
 
   static async update(id, updateData) {
+    const session =await mongoose.startSession();
+    session.startTransaction();
     try {
+      let result ={}
       const existing = await this.findById(id);
+      // existing = new Request({...updateData})
       if (!existing) throw new Error('Request not found');
-      return await RequestDAO.update(id, updateData);
+      
+      if (existing.status === 'pending' && (updateData.status ==='approved' || updateData.status ==='processed')) {
+        for (const detail of existing.requestDetails) {
+          await InventoryService.updateById(detail.inventoryId,+detail.quantity,existing.requestType === 'donation',session);
+        }
+        existing.status = updateData.status;
+        result = await RequestDAO.updateByModel(existing, session);
+      }else{
+        existing.status = updateData.status;
+        result = await RequestDAO.updateByModel(existing, session);
+      }
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error('Service error (RequestService, update):', error.message);
       throw error;
+    }finally{
+      session.endSession();
     }
   }
+  
 
   static async deleteById(id) {
     try {
@@ -85,26 +109,25 @@ class RequestService {
       throw error;
     }
   }
-  // we create user in a seperate page.
-  static async createFlow({ request, requestDetails, user }) {
+  static async createFlow({ request, requestDetails}) {
+    const session = await mongoose.startSession();
+    session.startTransaction()
     try {
-      if (!request || !requestDetails || !user?._id) {
-        throw new Error('Invalid data provided for request flow.');
-      }
-
-      request.user = user._id;
-      const createdRequest = await this.create(request);
-
-      const detailsWithRequest = Array.isArray(requestDetails)
-        ? requestDetails.map(detail => ({ ...detail, request: createdRequest._id }))
-        : { ...requestDetails, request: createdRequest._id };
-
-      const createdDetails = await RequestDetailsService.create(detailsWithRequest);
-
-      return { createdRequest, createdDetails };
+      const requestModel = new Request({...request})
+      const createdRequest = await this.create(requestModel, session);
+      if(!createdRequest) throw new Error('Could not Create a Request.')
+      
+      const detailsWithRequest = requestDetails.map(detail => ({ ...detail, requestId: createdRequest._id }))
+      const createdDetails = await RequestDetailsService.create(detailsWithRequest, session)
+      if(createdDetails.length<=0) throw new Error('Could not Create Details.')
+      
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction(); 
       console.error('Service error (RequestService, createFlow):', error.message);
       throw error;
+    } finally{
+      session.endSession();
     }
   }
 }

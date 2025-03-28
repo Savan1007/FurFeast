@@ -1,4 +1,5 @@
 const RequestDetailsDAO = require('../dao/RequestDetailsDao');
+const RequestDetails = require('../models/RequestDetails');
 const InventoryService = require('./InventoryService');
 const mongoose = require('mongoose');
 
@@ -22,39 +23,40 @@ class RequestDetailsService {
     }
   }
 
-  static async create(details, session = undefined) {
+  // static async create(details, requestType,session = undefined) {
+  //   let ownsSession = false;
+  //   if (!session) {session = await mongoose.startSession();session.startTransaction();ownsSession = true;}
+  //   try {
+  //     const inventory = await InventoryService.findAll();
+  //     const invMap = new Map();
+  //     inventory.forEach(item => invMap.set(String(item._id), item.quantity));
+  //     let updatedDetailsToModel;
+  //     if(requestType === 'donation') updatedDetailsToModel =  this.donationDetailshandler(details)
+  //     else updatedDetailsToModel = this.distributionDetailsHandler(details, invMap);
+
+  //     const created = await RequestDetailsDAO.create(updatedDetailsToModel, session);
+  //     if (ownsSession && session) {await session.commitTransaction();session.endSession();}
+  //     return created;
+  //   } catch (error) {
+  //     if (ownsSession && session) {await session.abortTransaction();session.endSession();}
+  //     console.error("Service error (RequestDetailsService, create):", error.message);
+  //     throw error;
+  //   } 
+  // }
+
+  static async create(details, session = undefined){
     let ownsSession = false;
-    if (!session) {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      ownsSession = true;
-    }
-
-    try {
-      const inventory = await InventoryService.findAll();
-      const invMap = new Map();
-      inventory.forEach(item => invMap.set(String(item._id), item.quantity));
-      // we do not check for status.
-      if (Array.isArray(details) && details.length > 0) {
-        details.forEach(detail => {
-          const available = invMap.get(String(detail.inventoryId)) ?? 0;
-          if (detail.requested <= available) detail.status = 'fulfilled';
-          else if (available === 0) detail.status = 'not_fulfilled';
-          else detail.status = 'partially_fulfilled';
-        });
-      } else {
-        throw new Error('Invalid request. RequestDetails are missing or not in array form.');
-      }
-
-      const created = await RequestDetailsDAO.create(details);
-      if (ownsSession) await session.commitTransaction();
+    if (!session) {session = await mongoose.startSession();session.startTransaction();ownsSession = true;}
+    try{
+      const updatedDetailsToModel = details.map(detail=> new RequestDetails({...detail}))
+      const created = await RequestDetailsDAO.create(updatedDetailsToModel, session);
+      if(created.length <=0) throw new Error('Could Not Create Details.')
+      if (ownsSession && session) {await session.commitTransaction();session.endSession();}
       return created;
-    } catch (error) {
-      if (ownsSession) await session.abortTransaction();
+    }catch(error){
+      if (ownsSession && session) {await session.abortTransaction();session.endSession();}
       console.error("Service error (RequestDetailsService, create):", error.message);
       throw error;
-    } finally {
-      if (ownsSession) session.endSession();
     }
   }
 
@@ -81,6 +83,26 @@ class RequestDetailsService {
       throw error;
     }
   }
+
+  // static donationDetailshandler(details){
+  //   return details.map(detail=> new RequestDetails({...detail, status:'pending',quantityProvided:null}))
+  // }
+  // static distributionDetailsHandler(details, invMap){
+  //   return details.map(detail => {
+  //       const available = invMap.get(String(detail.inventoryId)) ?? 0;
+  //       let status;
+      
+  //       if (detail.quantity <= available) status = 'fulfilled';
+  //       else if (available === 0) status = 'not_fulfilled';
+  //       else status = 'partially_fulfilled';
+      
+  //       return new RequestDetails({
+  //         ...detail,
+  //         status,
+  //         quantityAvailable:available
+  //       });
+  //     });
+  // }
 
 }
 

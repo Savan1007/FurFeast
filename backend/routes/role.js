@@ -14,4 +14,5 @@ router.get('/auth/role', async (req, res) => {
     }
 });
 
+
 module.exports = router;

@@ -3,6 +3,7 @@ require("dotenv").config();
 const AuthService = require('../service/AuthService');
 const UserDAO = require('../dao/UserDao');
 const { validationResult } = require("express-validator");
+const RoleService = require('../service/roleService');
 
 
 class AuthController {
@@ -91,8 +92,6 @@ class AuthController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
-
-  
   
   static async create(req, res) {
     try {
@@ -181,6 +180,17 @@ class AuthController {
     }
   }
   
+  static async findRoleWithId(req, res){
+    try{
+      const {id } = req.params;
+     
+      const userRole = await AuthService.findRoleByUserId(id);
+      res.status(200).json({success:true, data:userRole})
+    }catch(error){
+      console.error('findRoleWithId:', error.message);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 
 }
 

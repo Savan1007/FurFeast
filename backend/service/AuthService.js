@@ -246,11 +246,7 @@ class AuthService {
   static async createUser(userData, options = {}, session = undefined) {
     const { sendVerificationEmail = false, sendWelcomeEmail = false, createdBy = null } = options;
     let flag = false;
-    if (!session) {
-      flag = true;
-      session = await mongoose.startSession();
-      session.startTransaction();
-    }
+    if (!session) {flag = true;session = await mongoose.startSession();session.startTransaction();}
     try {
       const existingUser = await UserDAO.findByEmail(userData.email, session);
       if (existingUser) throw new Error(`User with email ${userData.email} already exists`);
@@ -258,16 +254,12 @@ class AuthService {
       const hashedPassword = await bcrypt.hash(String(userData.password), 10);
       if (!hashedPassword) throw new Error('Could not hash password');
       userData.password = hashedPassword;
-      if (!userData.username) {
-        userData.username = userData.email?.split('@')[0];
-      }
+      if (!userData.username) {userData.username = userData.email?.split('@')[0];}
   
       // const defaultRole = await RoleDAO.findByName('supplier', session);
       // if (!defaultRole) throw new Error('Default user role not found');
       // userData.roles = [defaultRole];
-      const userModel = new User({...userData ,
-        createdBy: createdBy
-      });
+      const userModel = new User({...userData ,createdBy: createdBy});
   
       if (sendVerificationEmail) {
         const { token, tokenExp } = await this.generateEmailVerificationToken();
@@ -278,25 +270,15 @@ class AuthService {
       const newUser = await UserDAO.create(userModel, session);
       if (!newUser) throw new Error('Could not create new User!');
   
-      if (sendVerificationEmail) {
+      if (sendVerificationEmail){
         const url = process.env.EMAIL_VERIFY_URL+userModel.emailVerificationToken;
-        await sendEmail(newUser.email, 'Email Confirmation', renderVerifyEmailHtml(url, newUser.username));
-      }
-  
-      if (sendWelcomeEmail) {
-        await sendEmail(newUser.email, 'Welcome to the Platform', renderWelcomeEmailHtml(newUser.username));
-      }
-  
-      if (flag && session) {
-        await session.commitTransaction();
-        session.endSession();
-      }
+        await sendEmail(newUser.email, 'Email Confirmation', renderVerifyEmailHtml(url, newUser.username));}
+
+      if (sendWelcomeEmail) {await sendEmail(newUser.email, 'Welcome to the Platform', renderWelcomeEmailHtml(newUser.username));}
+      if (flag && session) {await session.commitTransaction();session.endSession();}
       return newUser;
     } catch (error) {
-      if (flag && session) {
-        await session.abortTransaction();
-        session.endSession();
-      }
+      if (flag && session) {await session.abortTransaction();session.endSession();}
       console.error('Service error, (AuthService createUser()): ', error.message);
       throw error;
     }
@@ -332,8 +314,18 @@ class AuthService {
       throw error;
     }
   }
-  
-  
+
+  static async findRoleByUserId(id){
+    try{
+
+      const existingUser = await this.findById(id);
+      if(!existingUser) throw new Error('User Not Found.');
+      return await UserDAO.findRoleByUserId(existingUser._id);
+    }catch(error){
+      console.error('Service error, (AuthService findRoleByUserId()): ', error.message)
+      throw error;
+    }
+  }
   
 
   static generateAccessToken(user) {
@@ -359,9 +351,6 @@ class AuthService {
     const tokenExp = Date.now() + 30 * 60 * 1000;
     return {token, tokenExp};
   }
-
-  
-
 
 }
 

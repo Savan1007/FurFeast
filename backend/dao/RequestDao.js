@@ -40,10 +40,9 @@ class RequestDAO {
     }
   }
 
-  static async create(data) {
+  static async create(data, session=undefined) {
     try {
-      const request = new Request(data);
-      return await request.save();
+      return await data.save({session:session});
     } catch (error) {
       console.error('DAO error (RequestDAO, create):', error.message);
       throw error;
@@ -56,6 +55,15 @@ class RequestDAO {
       return updated;
     } catch (error) {
       console.error('DAO error (RequestDAO, update):', error.message);
+      throw error;
+    }
+  }
+
+  static async updateByModel(request, session = undefined){
+    try{
+      return request.save({session:session})
+    }catch(error){
+      console.error('DAO error (RequestDAO, updateByModel):', error.message);
       throw error;
     }
   }

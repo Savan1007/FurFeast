@@ -98,7 +98,6 @@ class UserDAO {
 
   static async findUsersWithFilters(query = {}, sort = {}, skip = 0, limit = 10, session = undefined) {
     try {
-      console.log(query)
       const users = await User.find(query)
         .populate('roles')
         .sort(sort)
@@ -113,6 +112,18 @@ class UserDAO {
       throw error;
     }
   }
+   static async findRoleByUserId(id){
+    try{
+      const role = await User.findById(id).populate({
+        path: 'roles',
+        select: 'name description'
+      });
+      return role;
+    }catch(error){
+      console.error('DAO error (UserDAO, findRoleByUserId()):', error.message);
+      throw error;
+    }
+   }
   
   
 }

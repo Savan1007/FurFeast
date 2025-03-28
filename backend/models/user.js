@@ -19,6 +19,31 @@ const UserSchema = new Schema({
   isBanned: { type: Boolean, default: false }, 
   userDetails: UserDetailsSchema,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
-}, { timestamps: true });
+}, { timestamps: true,
+  // toObject: {
+  //   virtuals: true,
+  //   versionKey: false,
+  //   transform: function (doc, ret) {
+  //     ret.id = ret._id;
+  //     delete ret._id;
+  //     delete ret.password;
+  //     delete ret.refreshToken;
+  //     delete ret.emailVerificationToken;
+  //     delete ret.passwordResetToken;
+  //   }
+  // },
+  toJSON: {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.password;
+      delete ret.refreshToken;
+      delete ret.emailVerificationToken;
+      delete ret.passwordResetToken;
+    }
+  }
+ });
 
 module.exports = mongoose.model('User', UserSchema);

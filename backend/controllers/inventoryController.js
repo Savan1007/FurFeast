@@ -1,7 +1,7 @@
 'use strict';
 
 
-const InventoryService = require('../service/inventoryService');
+const InventoryService = require('../service/InventoryService');
 
 
 class InventoryController {

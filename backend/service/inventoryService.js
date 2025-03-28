@@ -1,5 +1,6 @@
 'use strict';
 
+const  mongoose = require('mongoose');
 const InventoryDAO = require('../dao/InventoryDAO');
 
 class InventoryService {
@@ -94,22 +95,23 @@ class InventoryService {
     }
   }
 
-  static async updateById(id, quantity, isIncrease = true) {
+  static async updateById(id, quantity, isIncrease = true, session= undefined) {
+    let ownsSession = false
+    if(!session) {ownsSession=true; session = await mongoose.startSession();session.startTransaction();}
     try {
       const item = await this.findById(id);
       if (!item) throw new Error('Inventory item not found.');
 
-      if (isIncrease) {
-        item.quantity += quantity;
-      } else {
-        if (item.quantity < quantity) {
-          throw new Error('Not enough quantity to decrease.');
-        }
+      if (isIncrease) {item.quantity += quantity;}
+      else {
+        if (item.quantity < quantity) {throw new Error('Not enough quantity to decrease.');}
         item.quantity -= quantity;
       }
-
-      return await InventoryDAO.saveItem(item);
+      const result = await InventoryDAO.saveItem(item);
+      if(session && ownsSession){await session.commitTransaction();session.endSession();}
+      return result;
     } catch (error) {
+      if (ownsSession && session) {await session.abortTransaction();session.endSession();}
       console.error('Service error, (InventoryService, updateById()): ', error.message);
       throw error;
     }

@@ -1,6 +1,5 @@
 
 const RoleDao = require('../dao/RoleDao');
-const { sequelize } = require('../models');
 
 class RoleService {
   static async create(data) {

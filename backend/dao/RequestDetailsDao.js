@@ -21,13 +21,9 @@ class RequestDetailsDAO {
     }
   }
 
-  static async create(data) {
+  static async create(data, session = undefined) {
     try {
-      if (Array.isArray(data)) {
-        return await RequestDetails.insertMany(data);
-      }
-      const doc = new RequestDetails(data);
-      return await doc.save();
+        return await RequestDetails.insertMany(data,{session:session});
     } catch (error) {
       console.error('DAO error (RequestDetailsDAO, create):', error.message);
       throw error;

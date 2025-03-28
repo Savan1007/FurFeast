@@ -10,9 +10,18 @@ const RequestDetailsSchema = new Schema({
   // quantityProvided: { type: Number, default: 0 },
   // status: {
   //   type: String,
-  //   enum: ['pending', 'fulfilled', 'partiallyFulfilled', 'notFulfilled', 'rejected'], // we should talk to them
+  //   enum: ['pending', 'fulfilled', 'partiallyFulfilled', 'notFulfilled', 'rejected','received'],
   //   default: 'pending'
   // }
+},{
+  toJSON: {
+  virtuals: true,
+  versionKey: false,
+  transform: function (doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    }
+  }
 });
 
 module.exports = mongoose.model('RequestDetails', RequestDetailsSchema);
