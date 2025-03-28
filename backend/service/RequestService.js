@@ -77,7 +77,7 @@ class RequestService {
       const existing = await this.findById(id);
       // existing = new Request({...updateData})
       if (!existing) throw new Error('Request not found');
-      
+      if(existing.status === 'rejected' || existing.status === 'processed') throw new Error('No One Can Touch');
       if (existing.status === 'pending' && (updateData.status ==='approved' || updateData.status ==='processed')) {
         for (const detail of existing.requestDetails) {
           await InventoryService.updateById(detail.inventoryId,+detail.quantity,existing.requestType === 'donation',session);
