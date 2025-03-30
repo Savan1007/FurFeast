@@ -28,12 +28,30 @@ const Request = () => {
   const { data: requests, mutate, isSuccess, status } = useFetchAllRequest();
 
   useEffect(() => {
-    mutate(undefined, {
+    mutate({ status: "pending", includeDetails: true, includeUser: true }, {
       onSuccess: () => {
-        console.log("Data fetched successfully");
+        console.log("Pending requests fetched successfully");
       },
       onError: (error) => {
-        console.error("Error fetching data", error); 
+        console.error("Error fetching pending requests", error);
+      }
+    });
+
+    mutate({ status: "approved", includeDetails: true, includeUser: true }, {
+      onSuccess: () => {
+        console.log("Approved requests fetched successfully");
+      },
+      onError: (error) => {
+        console.error("Error fetching approved requests", error);
+      }
+    });
+
+    mutate({ status: "rejected", includeDetails: true, includeUser: true }, {
+      onSuccess: () => {
+        console.log("Rejected requests fetched successfully");
+      },
+      onError: (error) => {
+        console.error("Error fetching rejected requests", error);
       }
     });
   }, [mutate]);
@@ -84,7 +102,7 @@ const Request = () => {
               New Request
             </Button>
           </Flex>
-          <Skeleton isLoaded={status === "success"}>
+          <Skeleton isLoaded={status !== "success"}>
           <Card>
             <CardBody>
               <Tabs>
@@ -118,7 +136,7 @@ const Request = () => {
                   </Tab>
                 </TabList>
 
-                <TabPanels>
+                {/* <TabPanels>
                   <TabPanel px={0}>
                     <RequestTable requests={{ data: pendingRequests }} />
                   </TabPanel>
@@ -128,7 +146,7 @@ const Request = () => {
                   <TabPanel px={0}>
                     <RequestTable requests={{ data: rejectedRequests }} />
                   </TabPanel>
-                </TabPanels>
+                </TabPanels> */}
               </Tabs>
             </CardBody>
           </Card>

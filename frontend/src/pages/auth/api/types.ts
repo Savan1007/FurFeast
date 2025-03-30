@@ -1,14 +1,32 @@
 export interface AuthResponse {
-  data: {
-    id: number;
+  success: boolean;
+  message: string;
+  accessToken: string;
+  user: {
+    id: string;
     username: string;
     email: string;
-    role: string;
   };
-  auth: boolean;
 }
 
 export interface Credentials {
-  username: string;
+  emailOrUsername: string;
   password: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  roles: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+  refreshToken: string;
+}
+
+export interface FetchUserResponse {
+  success: boolean;
+  data: User;
 }
