@@ -31,10 +31,10 @@ class InventoryDAO {
     }
   }
 
-  static async saveItem(item) {
+  static async saveItem(item, session = undefined) {
     try {
       item.lastUpdated = new Date();
-      return await item.save();
+      return await item.save({ session });
     } catch (error) {
       console.error('DAO error, (InventoryDAO, saveItem()): ', error.message);
       throw error;
@@ -46,6 +46,15 @@ class InventoryDAO {
       return await Inventory.updateMany({}, { quantity: 0, lastUpdated: new Date() });
     } catch (error) {
       console.error('DAO error, (InventoryDAO, resetAllQuantities()): ', error.message);
+      throw error;
+    }
+  }
+
+  static async updateInventoryQuantityById(id, amount, session = undefined){
+    try{
+      return await Inventory.findOneAndUpdate({_id:id},{$set:{quantity:amount}},{session:session, new:true})
+    }catch(error){
+      console.error('DAO error, (InventoryDAO, updateInventoryQuantityById()): ', error.message);
       throw error;
     }
   }

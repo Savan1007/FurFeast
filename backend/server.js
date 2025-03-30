@@ -6,6 +6,7 @@ const errorRouter = require('./routes/error');
 const requestRouter = require('./routes/requestRouts');
 const authRouter = require('./routes/authRouts');
 const roleRoutes = require('./routes/role');
+const inventoryRoutes =require('./routes/inventroyRouts');
 
 const setupSwagger = require("./swagger/swagger");
 
@@ -25,6 +26,7 @@ app.use(express.urlencoded({extended:true}))
 app.use(authRouter);
 app.use(requestRouter);
 app.use(roleRoutes);
+app.use(inventoryRoutes)
 
 setupSwagger(app);
 app.use(errorRouter);

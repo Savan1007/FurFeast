@@ -25,67 +25,6 @@ class InventoryService {
     }
   }
 
-  static async findItem(category, foodType = null, foodForm = null, itemName = null) {
-    try {
-      const query = { category };
-      if (foodType) query.food_type = foodType;
-      if (foodForm) query.food_form = foodForm;
-      if (itemName) query.item_name = itemName;
-
-      const item = await InventoryDAO.findItem(query);
-      if (!item) throw new Error(`Item not found: ${category} (${foodType || itemName})`);
-      return item;
-    } catch (error) {
-      console.error('Service error, (InventoryService, findItem()): ', error.message);
-      throw error;
-    }
-  }
-
-  static async updateQuantity(category, foodType, foodForm, itemName, quantity) {
-    try {
-      const item = await this.findItem(category, foodType, foodForm, itemName);
-      item.quantity = quantity;
-      return await InventoryDAO.saveItem(item);
-    } catch (error) {
-      console.error('Service error, (InventoryService, updateQuantity()): ', error.message);
-      throw error;
-    }
-  }
-
-  static async increaseQuantity(category, foodType, foodForm, itemName, amount) {
-    try {
-      if (amount == null || isNaN(amount)) {
-        throw new Error('Amount must be a valid number.');
-      }
-
-      const item = await this.findItem(category, foodType, foodForm, itemName);
-      item.quantity += amount;
-      return await InventoryDAO.saveItem(item);
-    } catch (error) {
-      console.error('Service error, (InventoryService, increaseQuantity()): ', error.message);
-      throw error;
-    }
-  }
-
-  static async decreaseQuantity(category, foodType, foodForm, itemName, amount) {
-    try {
-      if (amount == null || isNaN(amount)) {
-        throw new Error('Amount must be a valid number.');
-      }
-
-      const item = await this.findItem(category, foodType, foodForm, itemName);
-      if (item.quantity < amount) {
-        throw new Error(`Not enough stock for ${item.category} (${item.food_type || item.item_name}).`);
-      }
-
-      item.quantity -= amount;
-      return await InventoryDAO.saveItem(item);
-    } catch (error) {
-      console.error('Service error, (InventoryService, decreaseQuantity()): ', error.message);
-      throw error;
-    }
-  }
-
   static async resetInventory() {
     try {
       return await InventoryDAO.resetAllQuantities();
@@ -107,7 +46,7 @@ class InventoryService {
         if (item.quantity < quantity) {throw new Error('Not enough quantity to decrease.');}
         item.quantity -= quantity;
       }
-      const result = await InventoryDAO.saveItem(item);
+      const result = await InventoryDAO.saveItem(item, session);
       if(session && ownsSession){await session.commitTransaction();session.endSession();}
       return result;
     } catch (error) {
@@ -116,6 +55,24 @@ class InventoryService {
       throw error;
     }
   }
+
+  static async updateInventoryQuantity(id, quantity){
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try{
+      const exisitngItem = await this.findById(id);
+      if(!exisitngItem) throw new Error('Item Not Found.')
+      const result =  await InventoryDAO.updateInventoryQuantityById(exisitngItem._id,quantity,session);
+    console.log(result)
+      await session.commitTransaction();session.endSession();
+      return result
+    }catch(error){
+      await session.abortTransaction(); session.endSession();
+      console.error('Service error, (InventoryService, updateInventoryQuantity()): ', error.message);
+      throw error;
+    }
+  }
+
 }
 
 module.exports = InventoryService;
