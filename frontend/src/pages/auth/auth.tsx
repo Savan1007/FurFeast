@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useActions, useUser } from "../../store/app-store";
-import { Form, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useActions } from "../../store/app-store";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -21,27 +21,38 @@ import {
   Tooltip,
   IconButton,
   useColorMode,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useAuth } from "./api/api";
-import { Moon, Sun } from "lucide-react";
+import { useAuth, useFetchUser } from "./api/api";
+import { EyeIcon, EyeOff, Moon, Sun } from "lucide-react";
+import { Role } from "../../utils/enums";
 
 const Auth = () => {
   const storeAction = useActions();
   const navigate = useNavigate();
-  const { data: user, mutate, isSuccess, status } = useAuth();
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { data, mutate, isSuccess, status, isError } = useAuth();
+  const [show, setShow] = useState(false);
+  const handleClick = () => setShow(!show);
+  const [loadingRole, setLoadingRole] = useState(false);
+  const user = useFetchUser();
 
-  const schema = yup.object().shape({
-    username: yup.string().required("Username is required."),
+  const schema = yup.object({
+    emailOrUsername: yup.string().required("Email/Username is required."),
     password: yup.string().required("Password is required."),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref("password"), undefined], "Passwords must match")
+      .required("Retype Password is required."),
   });
 
   type FormData = {
-    username: string;
+    emailOrUsername: string;
     password: string;
+    confirmPassword: string;
   };
 
   const {
@@ -57,29 +68,46 @@ const Auth = () => {
     mutate(values);
   });
 
-  if (isSuccess && user.auth) {
-    storeAction?.setUser(user.data);
-    navigate("/");
-  }
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (data?.user?.id && isSuccess && data.success) {
+        setLoadingRole(true);
+        try {
+          console.log("Fetching user role...");
+          user.mutate(data.user.id); // Call the useFetchUser mutation with the user ID
+        } catch (error) {
+          console.error("Failed to fetch user role:", error);
+        } finally {
+          setLoadingRole(false);
+        }
+      }
+    };
 
-  if (user && user.auth === false) {
-    console.log("Invalid username or password");
-  }
+    fetchUserRole();
+  }, [data, isSuccess]);
 
-  //   const handleLogin = () => {
-  //     if (username === "admin" && password === "admin") {
-  //       storeAction?.setUser({
-  //         id: 1,
-  //         username: "admin",
-  //         email: "admin@gmail.com",
-  //         role: "admin",
-  //       });
-  //       navigate("/");
-  //     } else {
-  //       setIsError(true);
-  //     }
-  //     console.log("isError", isError);
-  //   };
+  useEffect(() => {
+    if (user.isSuccess && user.data?.success) {
+      storeAction?.setUser(user.data.data); // Save user role in the store
+      navigate("/"); // Redirect after fetching the role
+    }
+
+    if (user.isError) {
+      console.error("Failed to fetch user role:", user.error);
+    }
+  }, [user, storeAction, navigate]);
+
+  useEffect(() => {
+    if (isSuccess && data.success) {
+      storeAction?.setAuthUser({
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email,
+      });
+      storeAction?.setAccessToken(data.accessToken);
+    }
+  }, [isSuccess, data, storeAction]);
+
   return (
     <Flex
       margin="auto"
@@ -109,20 +137,19 @@ const Auth = () => {
               <form onSubmit={onSubmit}>
                 <Stack spacing="6">
                   <Stack spacing="5">
-                    <FormControl isInvalid={!!errors.username}>
-                      <FormLabel htmlFor="username">Username</FormLabel>
+                    <FormControl isInvalid={!!errors.emailOrUsername}>
+                      <FormLabel htmlFor="email">Email / Username</FormLabel>
                       <Input
                         isRequired={true}
-                        id="username"
-                        type="username"
+                        id="emailOrUsername"
                         borderBottomWidth="2px"
-                        placeholder="username"
+                        placeholder="Email / Username"
                         variant="flushed"
                         autoFocus={true}
-                        {...register("username")}
+                        {...register("emailOrUsername")}
                       />
                       <FormErrorMessage>
-                        {errors.username?.message}
+                        {errors.emailOrUsername?.message}
                       </FormErrorMessage>
                     </FormControl>
                     <FormControl isInvalid={!!errors.password}>
@@ -130,23 +157,74 @@ const Auth = () => {
                         <FormLabel htmlFor="password" mt="4">
                           Password
                         </FormLabel>
-                        <Input
-                          isRequired={true}
-                          id="password"
-                          type="password"
-                          borderBottomWidth="2px"
-                          placeholder="Enter your password"
-                          variant="flushed"
-                          {...register("password")}
-                        />
+                        <InputGroup size="md">
+                          <Input
+                            isRequired={true}
+                            id="password"
+                            type={show ? "text" : "password"}
+                            borderBottomWidth="2px"
+                            placeholder="Enter your password"
+                            variant="flushed"
+                            {...register("password")}
+                          />
+                          <InputRightElement width="4.5rem">
+                            <Button
+                              h="1.75rem"
+                              size="sm"
+                              onClick={handleClick}
+                              variant={"ghost"}
+                            >
+                              {show ? (
+                                <EyeIcon size={16} />
+                              ) : (
+                                <EyeOff size={16} />
+                              )}
+                            </Button>
+                          </InputRightElement>
+                        </InputGroup>
                         <FormErrorMessage>
                           {errors.password?.message}
                         </FormErrorMessage>
                       </Stack>
                     </FormControl>
+                    <FormControl isInvalid={!!errors.password}>
+                      <Stack>
+                        <FormLabel htmlFor="password" mt="4">
+                          Retype Password
+                        </FormLabel>
+                        <InputGroup size="md">
+                          <Input
+                            isRequired={true}
+                            id="confirmPassword"
+                            type={show ? "text" : "password"}
+                            borderBottomWidth="2px"
+                            placeholder="Enter your Retype Password"
+                            variant="flushed"
+                            {...register("confirmPassword")}
+                          />
+                          <InputRightElement width="4.5rem">
+                            <Button
+                              h="1.75rem"
+                              size="sm"
+                              onClick={handleClick}
+                              variant={"ghost"}
+                            >
+                              {show ? (
+                                <EyeIcon size={16} />
+                              ) : (
+                                <EyeOff size={16} />
+                              )}
+                            </Button>
+                          </InputRightElement>
+                        </InputGroup>
+                        <FormErrorMessage>
+                          {errors.confirmPassword?.message}
+                        </FormErrorMessage>
+                      </Stack>
+                    </FormControl>
                   </Stack>
-                  {user && !user.auth && (
-                    <Text color="red">Invalid username or password</Text>
+                  {(isError || data?.success) && (
+                    <Text color="red">Invalid email or password</Text>
                   )}
                   <Stack spacing="6">
                     <Button
@@ -156,7 +234,9 @@ const Auth = () => {
                       bg={"black"}
                       textColor={"white"}
                       _hover={{ bg: "black" }}
-                      isLoading={isSubmitting || status === "pending"}
+                      isLoading={
+                        isSubmitting || status === "pending" || loadingRole
+                      }
                     >
                       Login
                     </Button>

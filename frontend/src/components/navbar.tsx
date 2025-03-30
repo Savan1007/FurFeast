@@ -11,14 +11,10 @@ import {
   Container,
   Tooltip,
   IconButton,
-  Button
+  Button,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Link as ChakraLink, LinkProps } from "@chakra-ui/react";
 import {
   LayoutDashboard,
@@ -28,8 +24,11 @@ import {
   LogOut,
   Sun,
   Moon,
+  Users,
 } from "lucide-react";
 import { useActions, useUser } from "../store/app-store";
+import { Role } from "../utils/enums";
+import { useLogout } from "../pages/auth/api/api";
 
 interface NavLinkProps {
   href: string;
@@ -70,13 +69,24 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
   const { colorMode, toggleColorMode } = useColorMode();
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
+  const logout = useLogout();
 
   const links = [
     { href: "/", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
     { href: "/inventory", label: "Inventory", icon: <Package size={20} /> },
     { href: "/requests", label: "Requests", icon: <ClipboardList size={20} /> },
     { href: "/reports", label: "Reports", icon: <BarChart size={20} /> },
+    ...(user?.roles[0].name === Role.SuperAdmin.toString()
+      ? [{ href: "/users", label: "Users", icon: <Users size={20} /> }]
+      : []),
   ];
+
+  const handleLogout = () => {
+    if (user?.id) {
+      logout.mutate(user.id);
+    }
+    storeAction?.logout();
+  };
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.50", "gray.900")}>
@@ -116,7 +126,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
 
             <Stack direction="row" spacing={4} alignItems="center">
               <Text fontSize="sm" color="gray.500">
-                Welcome, {user?.username}
+                Welcome, {user?.username} ({user?.roles[0].name})
               </Text>
               <Tooltip
                 label={`Switch to ${
@@ -138,7 +148,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                 />
               </Tooltip>
               <Button
-                onClick={() => storeAction?.logout()}
+                onClick={handleLogout}
                 variant="ghost"
                 leftIcon={<LogOut size={20} />}
                 colorScheme="red"
@@ -158,86 +168,3 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
     </Box>
   );
 }
-
-// const Navbar = () => {
-//   const navigate = useNavigate();
-//   const [showPopup, setShowPopup] = useState(false);
-//   const location = useLocation();
-//   const { colorMode, toggleColorMode } = useColorMode();
-//   const bg = useColorModeValue("white", "gray.800");
-//   const borderColor = useColorModeValue("gray.200", "gray.700");
-//   const activeColor = useColorModeValue("brand.600", "brand.900");
-//   const hoverBg = useColorModeValue("gray.100", "gray.700");
-
-//   const handleNavigation = (path: string) => {
-//     navigate(path);
-//   };
-
-//   const handleLogout = () => {
-//     // Add your logout logic here
-//     console.log("User logged out");
-//   };
-
-//   return (
-//     <Flex p={4} mb={2} shadow={"md"} bg={"white"} alignItems={"center"}>
-//       <Heading className="text-lg font-bold">RHS</Heading>
-//       <Flex ml={"10"} flex={1} justifyContent={"space-between"}>
-//         <HStack justifyContent={"start"} gap={8}>
-//           {[
-//             { name: "Dashboard", path: "/" },
-//             { name: "Requests", path: "/requests" },
-//             { name: "Inventory", path: "/inventory" },
-//             { name: "Reports", path: "/reports" },
-//           ].map((item, index) => (
-//             <ChakraLink
-//               key={index}
-//               as={ReactRouterLink}
-//               to={item.path}
-//               color={location.pathname === item.path ? activeColor : undefined}
-//               _hover={{ bg: hoverBg }}
-//               fontSize={"lg"}
-//               px={4}
-//               py={2}
-//               rounded="md"
-//             >
-//               {item.name}
-//             </ChakraLink>
-//           ))}
-//         </HStack>
-//         <HStack className="flex items-center space-x-4" position="relative">
-//           <Avatar
-//             size={"sm"}
-//             src="https://bit.ly/broken-link"
-//             cursor="pointer"
-//             onClick={() => setShowPopup(!showPopup)}
-//           />
-//           {showPopup && (
-//             <Box
-//               position="absolute"
-//               top="100%"
-//               right={0}
-//               mt={2}
-//               p={2}
-//               bg="white"
-//               shadow="md"
-//               borderRadius="md"
-//               zIndex={1}
-//             >
-//               <ChakraLink
-//                 as="button"
-//                 onClick={handleLogout}
-//                 _hover={{ textDecoration: "none", color: "black" }}
-//                 textColor={"gray.600"}
-//                 fontSize={"lg"}
-//               >
-//                 Logout
-//               </ChakraLink>
-//             </Box>
-//           )}
-//         </HStack>
-//       </Flex>
-//     </Flex>
-//   );
-// };
-
-// export default Navbar;
