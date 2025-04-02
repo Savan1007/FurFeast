@@ -1,197 +1,109 @@
 'usr strict'
 require("dotenv").config();
 const AuthService = require('../service/AuthService');
-const UserDAO = require('../dao/UserDao');
 const { validationResult } = require("express-validator");
-const RoleService = require('../service/roleService');
+const asyncHandler = require('express-async-handler');
+const BadRequestError = require('../config/errors/BadRequestError');
 
 
-class AuthController {
+exports.login = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
 
-  static async findUsers(req, res) {
-    try {
-      const result = await AuthService.findUsersWithFilters(req.query);
-      res.status(200).json({ success: true, data: result.users, total: result.total });
-    } catch (error) {
-      console.error('Find Users Error:', error.message);
-      res.status(500).json({ success: false, message: error.message });
+  const { emailOrUsername, password } = req.body;
+  const { accessToken, refreshToken, refreshTokenExpiry } = await AuthService.login(emailOrUsername, password);
+  const user = await AuthService.findByEmailOrUsername(emailOrUsername);
+  const maxAge = refreshTokenExpiry.getTime() - Date.now();
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge,
+    sameSite: 'Strict',
+    path: '/auth/refresh'
+  });
+
+  res.status(200).json({success: true,message: 'Login successful',accessToken,
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email
     }
-  }
-  
+  });
+});
 
-  static async login(req, res) {
-    try {
-      const errors = validationResult(req).array();
-      if(errors.length>0){
-        throw { status: 400, errors: errors };
-      }
-      const { emailOrUsername, password } = req.body;
+exports.findUsers = asyncHandler(async (req, res) => {
+  const result = await AuthService.findUsersWithFilters(req.query);
+  res.status(200).json({ success: true, data: result.users, total: result.total });
+});
 
-      const { accessToken, refreshToken,refreshTokenExpiry } = await AuthService.login(emailOrUsername, password);
-      const user = await AuthService.findByEmailOrUsername(emailOrUsername);
-      const maxAge = refreshTokenExpiry.getTime() - Date.now();
+exports.logout = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) throw new BadRequestError('User not found in request');
 
+  await AuthService.logout(userId);
+  res.clearCookie('refreshToken', { path: '/auth/refresh' });
+
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
+});
+
+exports.register = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+
+  await AuthService.createUser(req.body, { sendVerificationEmail: true });
+  res.status(201).json({ success: true, message: 'Registration successful. Please check your email to verify your account.' });
+});
+
+exports.create = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+
+  await AuthService.createUser(req.body, { sendWelcomeEmail: true, createdBy: req.user.id });
+  res.status(201).json({ success: true, message: 'User created successfully' });
+});
+
+exports.verifyEmail = asyncHandler(async (req, res) => {
+  const {token} = req.query;
+  const user = await AuthService.verifyEmailToken(token);
+
+  res.status(200).json({success: true, message: 'Email verified successfully',
+    user:{
+      id: user._id,
+      email: user.email,
+      username: user.username
+    }
+  });
+});
+
+exports.refresh = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+
+  const user = await AuthService.verfyRefreshToken(token);
+  const newAccessToken = AuthService.generateAccessToken(user);
+
+  res.status(200).json({
+    success: true,
+    accessToken: newAccessToken,
+  });
+});
+
+
+exports.isUsernameExists = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
     
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge, 
-        sameSite: 'Strict',
-        path: '/auth/refresh'
-      });
+    const exists = await AuthService.isUsernameExists(username);
+    res.status(200).json({ success: true, exists });
+});
 
-      res.status(200).json({success: true,message: 'Login successful',accessToken,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-        }
-      });
 
-    } catch (error) {
-      if (error?.errors) {
-        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
-      }
-      console.error('Login Error:', error.message);
-      res.status(401).json({ success: false, error: error.message });
-    }
-  }
+exports.findRoleWithId = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+  const {id} = req.params;
+  const userRole = await AuthService.findRoleByUserId(id);
+  res.status(200).json({ success: true, data: userRole });
+});
 
-  static async logout(req, res) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(400).json({ success: false, message: 'User not found in request' });
-      }
-
-      await AuthService.logout(userId);
-
-      res.clearCookie('refreshToken',{path:'/auth/refresh'
-      });
-      res.status(200).json({ success: true, message: 'Logged out successfully' });
-
-    } catch (error) {
-      console.error('Logout Error:', error.message);
-      res.status(500).json({ success: false, error: 'Logout failed' });
-    }
-  }
-
-  static async register(req, res) {
-    try {
-      const errors = validationResult(req).array();
-      if(errors.length>0){
-        throw { status: 400, errors: errors };
-      }
-      const user = await AuthService.createUser(req.body, { sendVerificationEmail: true });
-      res.status(201).json({ success: true, message: 'Registration successful. Please check your email to verify your account.' });
-    } catch (error) {
-      if (error?.errors) {
-        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
-      }
-      console.error('AuthController, User Creation Error:', error.message);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-  
-  static async create(req, res) {
-    try {
-      const errors = validationResult(req).array();
-      if(errors.length>0){
-        throw { status: 400, errors: errors };
-      }
-      const user = await AuthService.createUser(req.body, { sendWelcomeEmail: true, createdBy: req.user.id });
-      res.status(201).json({ success: true, message: 'User created successfully' });
-    } catch (error) {
-      if (error?.errors) {
-        return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });
-      }
-      console.error('AuthController, User Creation Error:', error.message);
-      res.status(400).json({ success: false, message: error.message });
-    }
-    // try {
-    //   const user = await AuthService.createUser(req.body);
-    //   res.status(201).json({
-    //     success: true,
-    //     message: 'User created successfully',
-    //     user: {
-    //       id: user.id,
-    //       email: user.email,
-    //       username: user.username
-    //     }
-    //   });
-    // } catch (error) {
-    //   console.error('User Creation Error:', error.message);
-    //   res.status(400).json({ success: false, error: error.message });
-    // }
-  }
-  
-  static async verifyEmail(req, res) {
-    try {
-      const { token } = req.query;
-      const user = await AuthService.verifyEmailToken(token);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Email verified successfully',
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username
-        }
-      });
-      
-    } catch (error) {
-      console.error('Email Verification Error:', error.message);
-      return res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  static async refresh(req, res) {
-    try {
-      const token = req.cookies.refreshToken;
-      if (!token) {
-        return res.status(401).json({ success: false, message: 'Refresh token missing' });
-      }
-  
-      const user = await AuthService.verfyRefreshToken(token); 
-      const newAccessToken = AuthService.generateAccessToken(user);
-  
-      return res.status(200).json({
-        success: true,
-        accessToken: newAccessToken,
-      });
-  
-    } catch (error) {
-      console.error('Refresh Error:', error.message);
-      return res.status(403).json({ success: false, message: 'Invalid or expired refresh token' });
-    }
-  } 
-
-  static async isUsernameExists(req, res) {
-    try {
-      const { username } = req.query;
-      if (!username) return res.status(400).json({ success: false, message: 'Username is required' });
-  
-      const exists = await AuthService.isUsernameExists(username);
-      res.status(200).json({ success: true, exists });
-    } catch (error) {
-      console.error('Check Username Error:', error.message);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-  
-  static async findRoleWithId(req, res){
-    try{
-      const {id } = req.params;
-     
-      const userRole = await AuthService.findRoleByUserId(id);
-      res.status(200).json({success:true, data:userRole})
-    }catch(error){
-      console.error('findRoleWithId:', error.message);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-}
-
-module.exports = AuthController;

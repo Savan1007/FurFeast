@@ -7,6 +7,10 @@ const InventorySchema = new Schema({
   itemName: { type: String},
   quantity: { type: Number, default: 0 },
   unit: { type: String, enum: ['kg', 'can', 'piece'] },
+  lowStockThreshold: {
+    type: Number,
+    default: 5 
+  }
 },{
   toJSON: {
   virtuals: true,
@@ -19,3 +23,4 @@ const InventorySchema = new Schema({
 });
 
 module.exports = mongoose.model('Inventory', InventorySchema);
+

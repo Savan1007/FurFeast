@@ -1,20 +1,19 @@
 'use strict'
-const authController = require('../controllers/authController')
+const { findRoleWithId, isUsernameExists, refresh, verifyEmail, create, register, logout, login,findUsers } = require('../controllers/authController')
 const authMiddleware = require('../middleware/authMiddleware')
 const express = require('express');
-const {signupValidation, loginValidation} = require('../validator/authValidator')
+const {signupValidation, loginValidation, isIdInParamValid, isUsernameInQueryValid, isRefreshTokenPresent} = require('../validator/authValidator')
 const router = express.Router();
 
-router.get('/auth/users', authMiddleware,authController.findUsers);
-router.post('/auth/register',signupValidation, authController.register);
-router.post('/auth/create', signupValidation, authMiddleware,authController.create);
-router.get('/auth/verify-email', authController.verifyEmail);
-router.post('/auth/login', loginValidation,authController.login);
-router.post('/auth/logout',  authMiddleware,authController.logout);
-router.get('/auth/refresh', authController.refresh);
-router.get('/auth/username-exists', authController.isUsernameExists);
-router.get('/auth/user/:id', authController.findRoleWithId);
-// change password rout left!
+router.get('/auth/users', authMiddleware,findUsers);
+router.post('/auth/register',signupValidation, register);
+router.post('/auth/create', signupValidation, authMiddleware,create);
+router.get('/auth/verify-email', verifyEmail);
+router.post('/auth/login', loginValidation, login);
+router.post('/auth/logout',  authMiddleware, logout);
+router.get('/auth/refresh', isRefreshTokenPresent,refresh);
+router.get('/auth/username-exists', isUsernameInQueryValid,isUsernameExists);
+router.get('/auth/user/:id', isIdInParamValid,findRoleWithId);
 
 
 
