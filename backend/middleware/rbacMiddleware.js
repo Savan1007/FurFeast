@@ -1,25 +1,18 @@
 'use strict';
-const AuthService = require('../services/authService');
+const asyncHandler = require('express-async-handler');
+const AuthService = require('../service/AuthService');
+const UnauthorizedError = require('../config/errors/UnauthorizedError');
+const ForbiddenError = require('../config/errors/ForbiddenError');
 
 module.exports = function rbacMiddleware(requiredPermission) {
-  return async function (req, res, next) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: 'User not authenticated' });
-      }
+  return asyncHandler(async function (req, res, next) {
+    const userId = req.user?.id;
+    if (!userId) throw new UnauthorizedError('User not authenticated');
 
-      const userPermissions = await AuthService.getPermissionsByUserId(userId);
+    const userPermissions = await AuthService.getPermissionsByUserId(userId);
+    const hasPermission = userPermissions.some(p => p.name === requiredPermission);
+    if (!hasPermission) throw new ForbiddenError('Insufficient permissions');
 
-      const hasPermission = userPermissions.some(p => p.name === requiredPermission);
-      if (!hasPermission) {
-        return res.status(403).json({ error: 'Forbidden: insufficient permissions' });
-      }
-
-      next();
-    } catch (err) {
-      console.error('RBAC Middleware Error:', err.message);
-      return res.status(500).json({ error: 'Internal authorization error' });
-    }
-  };
+    next();
+  });
 };

@@ -4,7 +4,7 @@ module.exports = (requestIds, inventoryItems) => {
   const findInventoryId = (itemName) => {
     const item = inventoryItems.find(i => i.itemName === itemName);
     if (!item) {
-      throw new Error(`❌ Inventory item not found: "${itemName}"`);
+      throw new Error(`Inventory item not found: "${itemName}"`);
     }
     return item._id;
   };
