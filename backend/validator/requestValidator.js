@@ -1,4 +1,4 @@
-const {body} = require("express-validator");
+const {body, param,query} = require("express-validator");
 
 
 const createRequestValidation = [
@@ -13,5 +13,12 @@ const createRequestValidation = [
   
 ]
 
+const isValidId = [
+  param('id').isMongoId().withMessage('Invalid Request Id'),
+]
+const isIdInQueryValid = [
+  query('userId').optional().isMongoId().withMessage('Invalid User Id')
+]
 
-module.exports = {createRequestValidation}
+
+module.exports = {createRequestValidation, isValidId, isIdInQueryValid}

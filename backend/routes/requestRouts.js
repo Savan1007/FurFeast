@@ -1,13 +1,12 @@
 const express = require('express');
-const requestController = require('../controllers/RequestController')
-const { createRequestValidation,} = require('../validator/requestValidator')
+const {findAll, findById, createFlow, update, deletee} = require('../controllers/RequestController')
+const { createRequestValidation, isValidId, isIdInQueryValid} = require('../validator/requestValidator')
 const router = express.Router();
 
 
-router.get('/request', requestController.findAll);
-router.get('/request/:id', requestController.findById);
-router.post('/request', createRequestValidation,requestController.createFlow);
-router.put('/request/:id', requestController.update)
-
-//router.delete('/request/:id',)
+router.get('/request', isIdInQueryValid, findAll);
+router.get('/request/:id', isValidId, findById);
+router.post('/request', createRequestValidation, createFlow);
+router.put('/request/:id', update)
+router.delete('/request/:id',isValidId, deletee);
 module.exports = router;

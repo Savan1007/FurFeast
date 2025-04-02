@@ -32,50 +32,24 @@ class RequestDAO {
       }
 
   static async findById(id, populate = '') {
-    try {
       return await Request.findById(id).populate(populate);
-    } catch (error) {
-      console.error('DAO error (RequestDAO, findById):', error.message);
-      throw error;
-    }
   }
 
-  static async create(data, session=undefined) {
-    try {
-      return await data.save({session:session});
-    } catch (error) {
-      console.error('DAO error (RequestDAO, create):', error.message);
-      throw error;
-    }
+  static async create(data, session = undefined) {
+    return await data.save({ session });
   }
 
   static async update(id, newData) {
-    try {
-      const updated = await Request.findByIdAndUpdate(id, newData, { new: true });
-      return updated;
-    } catch (error) {
-      console.error('DAO error (RequestDAO, update):', error.message);
-      throw error;
-    }
+    return await Request.findByIdAndUpdate(id, newData, { new: true });
   }
 
-  static async updateByModel(request, session = undefined){
-    try{
-      return request.save({session:session})
-    }catch(error){
-      console.error('DAO error (RequestDAO, updateByModel):', error.message);
-      throw error;
-    }
+  static async updateByModel(request, session = undefined) {
+    return await request.save({ session });
   }
 
   static async deleteById(id) {
-    try {
-      const result = await Request.findByIdAndDelete(id);
-      return result !== null;
-    } catch (error) {
-      console.error('DAO error (RequestDAO, deleteById):', error.message);
-      throw error;
-    }
+    const result = await Request.findByIdAndDelete(id);
+    return result !== null;
   }
 
 }

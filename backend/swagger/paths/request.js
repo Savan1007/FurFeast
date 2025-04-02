@@ -22,6 +22,23 @@
  *           type: string
  *           enum: [donation, distribution]
  *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *           description: MongoDB ObjectId of the user
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           description: Filter requests created after this date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           description: Filter requests created before this date
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer
@@ -52,6 +69,7 @@
  *       200:
  *         description: List of requests
  */
+
 
 /**
  * @swagger
