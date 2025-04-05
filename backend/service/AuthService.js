@@ -25,6 +25,7 @@ class AuthService {
         username,
         isVerified,
         isBanned,
+        role,
         sortBy = 'createdAt',
         sortOrder = 'desc'
       } = queryParams;
@@ -34,6 +35,7 @@ class AuthService {
       if (username) filters.username = { $regex: username, $options: 'i' };
       if (isVerified !== undefined) filters.isVerified = isVerified === 'true';
       if (isBanned !== undefined) filters.isBanned = isBanned === 'true';
+      if (role) filters.roles = role;
   
       const skip = (parseInt(page) - 1) * parseInt(limit);
       const sort = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
@@ -222,6 +224,24 @@ class AuthService {
     const token = buffer.toString("hex");
     const tokenExp = Date.now() + 30 * 60 * 1000;
     return {token, tokenExp};
+  }
+
+  static async updateUser(id, user){
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try{
+      const existingUser = await this.findById(id);
+      if(!existingUser) throw new NotFoundError('User');
+      const userToUpdate = new User({...user,_id:existingUser._id});
+      const updatedUser = await UserDAO.updateByModel(userToUpdate);
+      session.commitTransaction();
+      session.endSession();
+      return updatedUser;
+    }catch(error){
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 
 }

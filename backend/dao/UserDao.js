@@ -112,7 +112,7 @@ class UserDAO {
       throw error;
     }
   }
-   static async findRoleByUserId(id){
+  static async findRoleByUserId(id){
     try{
       const role = await User.findById(id).populate({
         path: 'roles',
@@ -123,7 +123,11 @@ class UserDAO {
       console.error('DAO error (UserDAO, findRoleByUserId()):', error.message);
       throw error;
     }
-   }
+  }
+
+  static async updateByModel(user, session = undefined) {
+    return await user.save({ session });
+  }
   
   
 }

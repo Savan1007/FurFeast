@@ -79,6 +79,7 @@ static async findById(id) {
   static async update(id, updateData) {
     const session =await mongoose.startSession();
     session.startTransaction();
+    let result= {}
     try { 
       const existing = await this.findById(id);
       if (!existing) throw new NotFoundError('Request');
@@ -92,7 +93,7 @@ static async findById(id) {
         result = await RequestDAO.updateByModel(existing, session);
       }
       existing.status = updateData.status;
-      const result = await RequestDAO.updateByModel(existing, session);
+      result = await RequestDAO.updateByModel(existing, session);
       
       await session.commitTransaction();
     }catch (error) {
@@ -130,6 +131,7 @@ static async findById(id) {
       session.endSession();
     }
   }
+  
 }
 
 module.exports = RequestService;

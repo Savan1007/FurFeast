@@ -107,3 +107,13 @@ exports.findRoleWithId = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: userRole });
 });
 
+exports.update = asyncHandler(async (req, res) => {
+  const errors = validationResult(req).array();
+  if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+
+  const { id } = req.params;
+  const user = await AuthService.updateUser(id, req.body);
+  res.status(200).json({ success: true, message: 'User updated successfully', user });
+}
+);
+
