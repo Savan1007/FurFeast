@@ -10,9 +10,9 @@ class UserDAO {
     }
   }
 
-  static async findById(id) {
+  static async findById(id, session=undefined) {
     try {
-      return await User.findById(id).populate('roles');
+      return await User.findById(id).populate({path: 'roles',options: { session }}).session(session);
     } catch (error) {
       console.error('DAO error (UserDAO, findById):', error.message);
       throw error;
@@ -86,9 +86,9 @@ class UserDAO {
     }
   }
 
-  static async isUsernameExists(username) {
+  static async isUsernameExists(username, session=undefined) {
     try {
-      const user = await User.findOne({ username });
+      const user = await User.findOne({ username }).session(session);
       return !!user;
     } catch (error) {
       console.error('DAO error (UserDAO, isUsernameExists):', error.message);
@@ -125,11 +125,6 @@ class UserDAO {
     }
   }
 
-  static async updateByModel(user, session = undefined) {
-    return await user.save({ session });
-  }
-  
-  
 }
 
 module.exports = UserDAO;

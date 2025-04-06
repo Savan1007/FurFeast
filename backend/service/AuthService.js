@@ -1,3 +1,4 @@
+'use strict'
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -14,7 +15,7 @@ class AuthService {
 
   static async findByEmail(email) {return await UserDAO.findByEmail(email); }
 
-  static async isUsernameExists(username) {return await UserDAO.isUsernameExists(username);}
+  static async isUsernameExists(username, session = undefined) {return await UserDAO.isUsernameExists(username);}
 
   static async findUsersWithFilters(queryParams = {}) {
     try {
@@ -47,7 +48,10 @@ class AuthService {
     }
   }
 
-  static async findById(id) {return await UserDAO.findById(id);}
+  static async findById(id, session=undefined) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {throw new BadRequestError('Invalid ID');}
+    return await UserDAO.findById(id, session);
+}
 
 
   static async login(emailOrUsername, password, session=undefined) {
@@ -226,22 +230,37 @@ class AuthService {
     return {token, tokenExp};
   }
 
-  static async updateUser(id, user){
+  static async updateUser(id, userData){
     const session = await mongoose.startSession();
     session.startTransaction();
     try{
-      const existingUser = await this.findById(id);
+      const existingUser = await this.findById(id, session);
+      console.log(existingUser)
       if(!existingUser) throw new NotFoundError('User');
-      const userToUpdate = new User({...user,_id:existingUser._id});
-      const updatedUser = await UserDAO.updateByModel(userToUpdate);
-      session.commitTransaction();
+      if(existingUser.username !== userData.username && await this.isUsernameExists(userData.username)) throw new BadRequestError(`${userData.username} is taken.`)
+      const existingPlain = existingUser.toObject();
+      const userToUpdate = this.deepMerge(existingPlain, userData);
+      existingUser.set(userToUpdate);
+      const updatedUser = await existingUser.save({session});
+      await updatedUser.populate('roles');
+      await session.commitTransaction();
       session.endSession();
       return updatedUser;
     }catch(error){
-      await session.abortTransaction();
-      session.endSession();
+      if(session.inTransaction()){await session.abortTransaction();session.endSession();}
       throw error;
     }
+  }
+  static deepMerge(target, source){
+    const output = {...target};
+    for(const key of Object.keys(source)){
+      if(source[key] instanceof Object && !Array.isArray(source[key]) && target[key] instanceof Object && !Array.isArray(target[key])){
+        output[key] = this.deepMerge(target[key], source[key])
+      }else{
+        output[key] = source[key];
+      }
+    }
+    return output
   }
 
 }

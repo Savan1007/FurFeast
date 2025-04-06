@@ -1,6 +1,7 @@
 'use strict';
 
-const InventoryService = require('../service/InventoryService');
+const BadRequestError = require('../config/errors/BadRequestError');
+const InventoryService = require('../service/inventoryService');
 const { validationResult } = require("express-validator");
 
 
@@ -84,6 +85,20 @@ class InventoryController {
         } catch (error) {
             console.error('Controller error, (InventoryController, resetInventory()): ', error.message);
             return res.status(500).json({ success: false, message: 'Failed to reset inventory.' });
+        }
+    }
+
+    static async updateByModel(req, res){
+        try{
+            const errors = validationResult(req).array();
+            if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+            
+            console.log(req.body)
+           const result = await InventoryService.updateByModel(req.params.id, req.body);
+           res.status(200).json({success:true, data:result, message:"inventroy updated successfully"});
+        }catch(error){
+            if (error?.errors) {return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });}
+            return res.status(500).json({ success: false, message: 'Failed to update inventory.' });
         }
     }
 }

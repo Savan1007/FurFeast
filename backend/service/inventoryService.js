@@ -2,6 +2,7 @@
 
 const  mongoose = require('mongoose');
 const InventoryDAO = require('../dao/InventoryDAO');
+const NotFoundError = require('../config/errors/NotFoundError');
 
 class InventoryService {
 
@@ -72,6 +73,23 @@ class InventoryService {
       throw error;
     }
   }
+
+  static async updateByModel(id, newData){
+
+    try{
+      const existingItem = await this.findById(id);
+      if(!existingItem) throw new NotFoundError('Inventory')
+      existingItem.set(newData);
+      const updatedItem = await existingItem.save();
+  
+      return updatedItem;
+    }catch(error){
+      console.error(error.message)
+      throw error;
+    }
+  }
+
+
 
 }
 
