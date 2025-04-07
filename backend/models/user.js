@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Role = require('./Role');
+const Role = require('./Roles');
 const UserDetailsSchema = require('./UserDetails');
 const Schema = mongoose.Schema;
 

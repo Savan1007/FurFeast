@@ -1,4 +1,4 @@
-const Role = require('../models/Role');
+const Role = require('../models/Roles');
 
 async function initializeDefaultRoles() {
 

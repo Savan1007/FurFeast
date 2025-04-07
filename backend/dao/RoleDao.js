@@ -1,4 +1,4 @@
-const Role = require('../models/Role');
+const Role = require('../models/Roles');
 
 class RoleDao {
   static async findByName(name, session=undefined) {
