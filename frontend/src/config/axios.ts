@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Axios instance for APIs that require authorization
 export const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000', // Fallback to localhost if env variable is not set
+  baseURL: process.env.API_URL || 'http://localhost:5000', // Fallback to localhost if env variable is not set
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

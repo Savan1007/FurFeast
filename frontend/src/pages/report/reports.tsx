@@ -22,7 +22,9 @@ import { useState } from "react";
 import Navbar from "../../components/navbar";
 import { useInventory } from "../../store/app-store";
 import { useFetchAllRequest } from "../request/api/api";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function Reports() {
   const textColor = useColorModeValue("gray.600", "gray.400");
@@ -58,10 +60,52 @@ export default function Reports() {
     });
   };
 
+  const exportToPDF = async () => {
+    const element = document.getElementById("report-table"); // The table element
+    if (!element) return;
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const margin = 10; // Margin in mm
+    const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    // Add filters to the PDF
+    let yPosition = margin; // Start position for text
+    pdf.setFontSize(12);
+    pdf.text("Report Filters:", margin, yPosition);
+    yPosition += 6;
+
+    if (status) {
+      pdf.text(`Status: ${status}`, margin, yPosition);
+      yPosition += 6;
+    }
+    if (requestType) {
+      pdf.text(`Request Type: ${requestType}`, margin, yPosition);
+      yPosition += 6;
+    }
+    if (startDate) {
+      pdf.text(`Start Date: ${startDate}`, margin, yPosition);
+      yPosition += 6;
+    }
+    if (endDate) {
+      pdf.text(`End Date: ${endDate}`, margin, yPosition);
+      yPosition += 6;
+    }
+
+    // Add the table image to the PDF
+    pdf.addImage(imgData, "PNG", margin, yPosition, pdfWidth, pdfHeight);
+
+    // Save the PDF
+    pdf.save("report.pdf");
+  };
+
   return (
     <Navbar>
       <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
-        <Stack spacing={8}>
+        <Stack>
           <Box>
             <Heading size="lg" color={headingColor}>
               Report
@@ -197,6 +241,7 @@ export default function Reports() {
                   display="flex"
                   alignItems="center"
                   pt={{ base: 0, md: 6 }}
+                  gap={4}
                 >
                   <Button
                     onClick={handleSubmit}
@@ -212,9 +257,19 @@ export default function Reports() {
           </Card>
           {filterClicked && (
             <Skeleton isLoaded={mutateStatus !== "pending"}>
+              <Flex justify="flex-end" mb={1}>
+                <Button
+                  colorScheme="blue"
+                  variant="ghost"
+                  onClick={exportToPDF}
+                  gap={2}
+                >
+                  <Download /> Download
+                </Button>
+              </Flex>
               <Card>
                 <CardBody>
-                  <Table variant="simple">
+                  <Table id="report-table" variant="simple">
                     <Thead bg={bgColor}>
                       <Tr>
                         <Th>Name of Organization</Th>

@@ -30,6 +30,7 @@ import { useActions, useUser } from "../store/app-store";
 import { Role } from "../utils/enums";
 import { useLogout } from "../pages/auth/api/api";
 import logo from "../assets/FurFeast-logo.png";
+import darkLogo from "../assets/FurFeast-logo-dark.png";
 
 interface NavLinkProps {
   href: string;
@@ -118,7 +119,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                 <HStack spacing={2} alignItems="center">
                 <Image
                   boxSize="80px"
-                  src={logo}
+                  src={colorMode === "light" ? logo : darkLogo}
                   alt="FurFeast Logo"
                   borderRadius='full'
                   onClick={() => (window.location.href = "/")}
