@@ -1,5 +1,5 @@
 const NotificationDAO = require('../dao/NotificationDao');
-const User = require('../models/User');
+const User = require('../models/Users');
 
 class NotificationService {
   async createNotification(data) {

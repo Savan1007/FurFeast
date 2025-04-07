@@ -1,4 +1,4 @@
-const Permission = require('../models/Permission');
+const Permission = require('../models/Permissions');
 
 class PermissionDao {
   static async findByName(name) {

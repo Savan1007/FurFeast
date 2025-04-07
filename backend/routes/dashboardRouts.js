@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Request = require('../models/Request');
-const InventoryItem = require('../models/Inventory');
+const InventoryItem = require('../models/Inventories');
 
 router.get('/dashboard/summary', async (req, res) => {
   try {

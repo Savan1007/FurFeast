@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Inventory = require('./Inventory');
+const Inventory = require('./Inventories');
 const Request = require('./Request');
 const Schema = mongoose.Schema;
 

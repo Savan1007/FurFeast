@@ -1,6 +1,6 @@
 'use strict';
 
-const Inventory = require('../models/Inventory');
+const Inventory = require('../models/Inventories');
 
 class InventoryDAO {
 

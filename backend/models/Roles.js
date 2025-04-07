@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const Permission = require('./Permission')
+const Permission = require('./Permissions')
 
 const RoleSchema = new Schema({
   name: { type: String, unique: true, required: true },

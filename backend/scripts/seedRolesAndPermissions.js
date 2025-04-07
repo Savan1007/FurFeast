@@ -1,7 +1,7 @@
 require("dotenv").config();
 const mongoose = require('mongoose');
 const Role = require('../models/Roles');
-const Permission = require('../models/Permission');
+const Permission = require('../models/Permissions');
 const config = require('../config/rolePermission');
 
 async function seed() {

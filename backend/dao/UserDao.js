@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/Users');
 
 class UserDAO {
   static async findByEmail(email, session=undefined) {

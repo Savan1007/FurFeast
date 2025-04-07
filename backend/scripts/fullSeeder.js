@@ -2,8 +2,8 @@ require('dotenv').config();
 
 const mongoose = require('mongoose');
 
-const User = require('../models/User');
-const Inventory = require('../models/Inventory');
+const User = require('../models/Users');
+const Inventory = require('../models/Inventories');
 const Request = require('../models/Request');
 const RequestDetails = require('../models/RequestDetails');
 
