@@ -1,148 +1,96 @@
 'use strict';
 
-const { sequelize } = require('../models');
-const InventoryDAO = require('../dao/inventoryDao');
+const  mongoose = require('mongoose');
+const InventoryDAO = require('../dao/InventoryDAO');
+const NotFoundError = require('../config/errors/NotFoundError');
 
 class InventoryService {
-    /**
-     * Fetch all inventory items.
-     * @returns {Promise<Array<Inventory>>} - Returns an array of all inventory items.
-     * @throws {Error} - Throws an error if fetching fails.
-     */
-    static async findAll() {
-        try {
-            return await InventoryDAO.findAll();
-        } catch (error) {
-            console.error('Service error, (InventoryService, findAll()): ', error.message);
-            throw new Error('Failed to fetch inventory.');
-        }
-    }
 
-    /**
-     * Find a specific inventory item.
-     * 
-     * @param {string} category - The category ('food' or 'miscellaneous').
-     * @param {string|null} foodType - Food type ('dog' or 'cat'), or null for misc.
-     * @param {string|null} foodForm - Food form ('wet' or 'dry'), or null for misc.
-     * @param {string|null} itemName - Misc item name ('collar' or 'toy'), or null for food.
-     * @returns {Promise<Inventory>} - The found inventory item.
-     * @throws {Error} - Throws an error if the item is not found.
-     */
-    static async findItem(category, foodType = null, foodForm = null, itemName = null) {
-        try {
-            const item = await InventoryDAO.findItem(category, foodType, foodForm, itemName);
-            if (!item) throw new Error(`Item not Found!: ${category} (${foodType || itemName})!`);
-            return item;
-        } catch (error) {
-            console.error('Service error, (InventoryService, findItem()): ', error.message);
-            throw error;
-        }
+  static async findAll() {
+    try {
+      return await InventoryDAO.findAll();
+    } catch (error) {
+      console.error('Service error, (InventoryService, findAll()): ', error.message);
+      throw new Error('Failed to fetch inventory.');
     }
+  }
 
-    /**
-     * Update inventory quantity.
-     * Uses transactions to ensure atomicity.
-     * First, it finds the item, then updates its quantity.
-     * 
-     * @param {string} category
-     * @param {string|null} foodType
-     * @param {string|null} foodForm
-     * @param {string|null} itemName
-     * @param {number} quantity - The new quantity to set.
-     * @returns {Promise<Inventory>} - The updated inventory item.
-     * @throws {Error} - Throws an error if update fails or the item does not exist.
-     */
-    static async updateQuantity(category, foodType, foodForm, itemName, quantity) {
-        const transaction = await sequelize.transaction();
-        try {
-            const item = await this.findItem(category, foodType, foodForm, itemName);
-            const updatedItem = await InventoryDAO.updateQuantity(item, quantity, transaction);
-            await transaction.commit();
-            return updatedItem;
-        } catch (error) {
-            await transaction.rollback();
-            console.error('Service error, (InventoryService, updateQuantity()): ', error.message);
-            throw error;
-        }
+  static async findById(id) {
+    try {
+      const item = await InventoryDAO.findById(id);
+      if (!item) throw new Error('Inventory item not found.');
+      return item;
+    } catch (error) {
+      console.error('Service error, (InventoryService, findById()): ', error.message);
+      throw error;
     }
+  }
 
-    /**
-     * Increase inventory quantity.
-     * Uses transactions to ensure atomicity.
-     * First, it finds the item, then increases its quantity.
-     * 
-     * @param {string} category
-     * @param {string|null} foodType
-     * @param {string|null} foodForm
-     * @param {string|null} itemName
-     * @param {number} amount - The amount to add.
-     * @returns {Promise<Inventory>} - The updated inventory item.
-     * @throws {Error} - Throws an error if update fails or the item does not exist.
-     */
-    static async increaseQuantity(category, foodType, foodForm, itemName, amount) {
-        const transaction = await sequelize.transaction();
-        try {
-            const item = await this.findItem(category, foodType, foodForm, itemName);
-            const updatedItem = await InventoryDAO.increaseQuantity(item, amount, transaction);
-            await transaction.commit();
-            return updatedItem;
-        } catch (error) {
-            await transaction.rollback();
-            console.error('Service error, (InventoryService, increaseQuantity()): ', error.message);
-            throw error;
-        }
+  static async resetInventory() {
+    try {
+      return await InventoryDAO.resetAllQuantities();
+    } catch (error) {
+      console.error('Service error, (InventoryService, resetInventory()): ', error.message);
+      throw new Error('Failed to reset inventory.');
     }
+  }
 
-    /**
-     * Decrease inventory quantity.
-     * Ensures stock does not go below zero.
-     * Uses transactions to ensure atomicity.
-     * First, it finds the item, then decreases its quantity.
-     * 
-     * @param {string} category
-     * @param {string|null} foodType
-     * @param {string|null} foodForm
-     * @param {string|null} itemName
-     * @param {number} amount - The amount to subtract.
-     * @returns {Promise<Inventory>} - The updated inventory item.
-     * @throws {Error} - Throws an error if stock is insufficient, the item does not exist, or update fails.
-     */
-    static async decreaseQuantity(category, foodType, foodForm, itemName, amount) {
-        const transaction = await sequelize.transaction();
-        try {
-            const item = await this.findItem(category, foodType, foodForm, itemName); 
-            if (item.quantity < amount) {
-                throw new Error(`Not enough stock available for ${item.category} (${item.food_type || item.item_name})!`);
-            }
+  static async updateById(id, quantity, isIncrease = true, session= undefined) {
+    let ownsSession = false
+    if(!session) {ownsSession=true; session = await mongoose.startSession();session.startTransaction();}
+    try {
+      const item = await this.findById(id);
+      if (!item) throw new Error('Inventory item not found.');
 
-            const updatedItem = await InventoryDAO.decreaseQuantity(item, amount, transaction);
-            await transaction.commit();
-            return updatedItem;
-        } catch (error) {
-            await transaction.rollback();
-            console.error('Service error, (InventoryService, decreaseQuantity()): ', error.message);
-            throw error;
-        }
+      if (isIncrease) {item.quantity += quantity;}
+      else {
+        if (item.quantity < quantity) {throw new Error('Not enough quantity to decrease.');}
+        item.quantity -= quantity;
+      }
+      const result = await InventoryDAO.saveItem(item, session);
+      if(session && ownsSession){await session.commitTransaction();session.endSession();}
+      return result;
+    } catch (error) {
+      if (ownsSession && session) {await session.abortTransaction();session.endSession();}
+      console.error('Service error, (InventoryService, updateById()): ', error.message);
+      throw error;
     }
+  }
 
-    /**
-     * Reset all inventory stock to zero.
-     * Uses transactions to ensure atomicity.
-     * 
-     * @returns {Promise<void>}
-     * @throws {Error} - Throws an error if reset fails.
-     */
-    static async resetInventory() {
-        const transaction = await sequelize.transaction();
-        try {
-            await InventoryDAO.resetInventory(transaction);
-            await transaction.commit();
-        } catch (error) {
-            await transaction.rollback();
-            console.error('Service error, (InventoryService, resetInventory()): ', error.message);
-            throw new Error('Failed to reset inventory.');
-        }
+  static async updateInventoryQuantity(id, quantity){
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try{
+      const exisitngItem = await this.findById(id);
+      if(!exisitngItem) throw new Error('Item Not Found.')
+      const result =  await InventoryDAO.updateInventoryQuantityById(exisitngItem._id,quantity,session);
+    console.log(result)
+      await session.commitTransaction();session.endSession();
+      return result
+    }catch(error){
+      await session.abortTransaction(); session.endSession();
+      console.error('Service error, (InventoryService, updateInventoryQuantity()): ', error.message);
+      throw error;
     }
+  }
+
+  static async updateByModel(id, newData){
+
+    try{
+      const existingItem = await this.findById(id);
+      if(!existingItem) throw new NotFoundError('Inventory')
+      existingItem.set(newData);
+      const updatedItem = await existingItem.save();
+  
+      return updatedItem;
+    }catch(error){
+      console.error(error.message)
+      throw error;
+    }
+  }
+
+
+
 }
 
 module.exports = InventoryService;

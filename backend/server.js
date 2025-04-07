@@ -1,33 +1,59 @@
 
-// require("dotenv").config();
 require("dotenv").config();
-const errorRouter = require('./routes/error')
-const supplierRouter = require('./routes/supplierRouts');
-const donationRouter = require('./routes/donationRouts');
-const recipientRouter = require('./routes/recipientRouts');
-const inventoryRouter = require('./routes/inventroyRouts');
+const initializeDefaultRoles = require('./config/initialDefaultRoles');
+
+const requestRouter = require('./routes/requestRouts');
+const authRouter = require('./routes/authRouts');
+const roleRoutes = require('./routes/role');
+const inventoryRoutes =require('./routes/inventroyRouts');
+const dashboardRoutes = require('./routes/dashboardRouts');
+const errorHandler = require('./middleware/errorMiddleware');
+const traceId = require('./middleware/traceId');
+
+const setupSwagger = require("./swagger/swagger");
+const NotFoundError = require('./config/errors/NotFoundError')
 const express = require('express');
 const cors = require('cors');
-const { pool, testConnection } = require('./util/dbConnection')
-const setupSwagger = require("./swagger");
+const cookieParser = require('cookie-parser');
 
-// pool.execute('select * from employees').then(([result, tableST])=>{
-    //     console.log(result)
-    // }).catch()
+const mongoose = require('mongoose');
 
 const app = express();
-app.use(cors());
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser());
+app.use(cors());
+app.use(express.urlencoded({extended:true}))
 
-app.use(supplierRouter);
-app.use(donationRouter);
-app.use(recipientRouter);
-app.use(inventoryRouter);
+app.use(traceId);
+app.use(authRouter);
+app.use(requestRouter);
+app.use(roleRoutes);
+app.use(inventoryRoutes);
+app.use(dashboardRoutes);
+
 setupSwagger(app);
-app.use(errorRouter);
+app.use((req,res,next)=>{next(new NotFoundError(`Route ${req.originalUrl}`))});
+app.use(errorHandler);
 
-const PORT = process.env.PORT;
-app.listen(3000, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+
+
+
+async function startServer() {
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('MongoDB connected');
+  
+      await initializeDefaultRoles();
+      console.log('Default roles initialized');
+  
+      app.listen(process.env.PORT, () => {
+        console.log(`Server is running on port ${process.env.PORT}`);
+      });
+    } catch (err) {
+      console.error(' Failed to start server:', err);
+      process.exit(1);
+    }
+  }
+startServer();
+

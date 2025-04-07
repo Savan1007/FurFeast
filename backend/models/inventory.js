@@ -1,32 +1,26 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
-  class Inventory extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      Inventory.belongsToMany(models.Recipient, { through: models.Distribution, foreignKey: 'inventory_id' });
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const InventorySchema = new Schema({
+
+  itemType: { type: String, enum: ['food', 'miscellaneous'], required: true },
+  itemName: { type: String},
+  quantity: { type: Number, default: 0 },
+  unit: { type: String, enum: ['kg', 'can', 'piece'] },
+  lowStockThreshold: {
+    type: Number,
+    default: 5 
+  }
+},{
+  toJSON: {
+  virtuals: true,
+  versionKey: false,
+  transform: function (doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
     }
   }
-  Inventory.init({
-    id:{type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true,},
-    category: {type: DataTypes.ENUM('food', 'miscellaneous'), allowNull: false,},
-    food_type: {type: DataTypes.ENUM('dog', 'cat'),allowNull: true,},
-    food_form: {type: DataTypes.ENUM('dry', 'wet'),allowNull: true,},
-    item_name: {type: DataTypes.ENUM('collar', 'toy'),allowNull: true,},
-    quantity: {type: DataTypes.INTEGER,defaultValue: 0,},
-    unit: {type: DataTypes.ENUM('kg', 'can', 'piece'), allowNull: true,},
-    last_updated: {type: DataTypes.DATE,defaultValue: DataTypes.NOW},
-  }, {
-    sequelize,
-    modelName: 'Inventory',
-    tableName: 'inventory',
-    updatedAt: 'last_updated'
-  });
-  return Inventory;
-};
+});
+
+module.exports = mongoose.model('Inventory', InventorySchema);
+

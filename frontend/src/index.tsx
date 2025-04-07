@@ -1,15 +1,27 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App.tsx';
-import reportWebVitals from './reportWebVitals.ts';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { ChakraProvider } from "@chakra-ui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import theme from "./lib/theme";
+import { AppProvider } from "./store/app-store";
+
+const queryClient = new QueryClient();
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById("root") as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <ChakraProvider theme={theme}>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </ChakraProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
 

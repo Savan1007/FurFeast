@@ -1,42 +1,30 @@
 'use strict';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     InventoryItem:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         category:
- *           type: string
- *         food_type:
- *           type: string
- *         food_form:
- *           type: string
- *         item_name:
- *           type: string
- *         quantity:
- *           type: integer
- *         unit:
- *           type: string
- *         last_updated:
- *           type: string
- *           format: date-time
- */
-
-
+const BadRequestError = require('../config/errors/BadRequestError');
 const InventoryService = require('../service/inventoryService');
+const { validationResult } = require("express-validator");
 
 
 class InventoryController {
  
     static async findAll(req, res) {
         try {
-            const inventory = await InventoryService.findAll();
-            return res.status(200).json({ success: true, data: inventory });
+            const data = await InventoryService.findAll();
+            return res.status(200).json({ success: true, data });
         } catch (error) {
+            console.error('Controller error, (InventoryController, getAllInventory()): ', error.message);
+            return res.status(500).json({ success: false, message: 'Failed to fetch inventory.' });
+        }
+    }
+
+    static async findById(req, res) {
+        try {
+            const errors = validationResult(req).array();
+            if(errors.length>0){throw { status: 400, errors: errors };}
+            const data = await InventoryService.findById(req.params.id);
+            return res.status(200).json({ success: true, data });
+        } catch (error) {
+            if (error?.errors) {return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });}
             console.error('Controller error, (InventoryController, getAllInventory()): ', error.message);
             return res.status(500).json({ success: false, message: 'Failed to fetch inventory.' });
         }
@@ -57,10 +45,15 @@ class InventoryController {
   
     static async updateInventoryQuantity(req, res) {
         try {
-            const { category, foodType, foodForm, itemName, quantity } = req.body;
-            const updatedItem = await InventoryService.updateQuantity(category, foodType, foodForm, itemName, quantity);
-            return res.status(200).json({ success: true, data: updatedItem });
+            const errors = validationResult(req).array();
+            if(errors.length>0){throw { status: 400, errors: errors };}
+            const { quantity } = req.body;
+            const id = req.params.id
+            console.log('here in controller')
+            const updatedItem = await InventoryService.updateInventoryQuantity(id, quantity);
+            res.status(200).json({ success: true, data: updatedItem });
         } catch (error) {
+            if (error?.errors) {return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });}
             console.error('Controller error, (InventoryController, updateInventoryQuantity()): ', error.message);
             return res.status(400).json({ success: false, message: error.message });
         }
@@ -92,6 +85,21 @@ class InventoryController {
         } catch (error) {
             console.error('Controller error, (InventoryController, resetInventory()): ', error.message);
             return res.status(500).json({ success: false, message: 'Failed to reset inventory.' });
+        }
+    }
+
+    static async updateByModel(req, res){
+        try{
+            const errors = validationResult(req).array();
+            if (errors.length > 0) throw new BadRequestError('Validation error', errors);
+            
+            console.log(req.body)
+           const result = await InventoryService.updateByModel(req.params.id, req.body);
+           console.log("result", result)
+           res.status(200).json({success:true, data:result, message:"inventroy updated successfully"});
+        }catch(error){
+            if (error?.errors) {return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });}
+            return res.status(500).json({ success: false, message: 'Failed to update inventory.' });
         }
     }
 }
