@@ -12,10 +12,10 @@ import {
   Tooltip,
   IconButton,
   Button,
+  Image,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Link as ChakraLink, LinkProps } from "@chakra-ui/react";
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
@@ -29,6 +29,7 @@ import {
 import { useActions, useUser } from "../store/app-store";
 import { Role } from "../utils/enums";
 import { useLogout } from "../pages/auth/api/api";
+import logo from "../assets/FurFeast-logo.png";
 
 interface NavLinkProps {
   href: string;
@@ -73,11 +74,22 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-    { href: "/inventory", label: "Inventory", icon: <Package size={20} /> },
-    { href: "/requests", label: "Requests", icon: <ClipboardList size={20} /> },
-    { href: "/reports", label: "Reports", icon: <BarChart size={20} /> },
-    ...(user?.roles[0].name === Role.SuperAdmin.toString()
-      ? [{ href: "/users", label: "Users", icon: <Users size={20} /> }]
+    ...(user?.roles[0].name === Role.SuperAdmin.toString() ||
+    user?.roles[0].name === Role.Admin.toString()
+      ? [
+          {
+            href: "/inventory",
+            label: "Inventory",
+            icon: <Package size={20} />,
+          },
+          {
+            href: "/requests",
+            label: "Requests",
+            icon: <ClipboardList size={20} />,
+          },
+          { href: "/reports", label: "Reports", icon: <BarChart size={20} /> },
+          { href: "/users", label: "Users", icon: <Users size={20} /> },
+        ]
       : []),
   ];
 
@@ -103,13 +115,22 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
         <Container maxW="7xl">
           <Flex h={16} alignItems="center" justifyContent="space-between">
             <Stack direction="row" spacing={8} alignItems="center">
-              <Text
-                fontSize="lg"
-                fontWeight="bold"
-                color={useColorModeValue("brand.600", "brand.300")}
-              >
-                FurFeast
-              </Text>
+                <HStack spacing={2} alignItems="center">
+                <Image
+                  boxSize="80px"
+                  src={logo}
+                  alt="FurFeast Logo"
+                  borderRadius='full'
+                  onClick={() => (window.location.href = "/")}
+                />
+                {/* <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  color={useColorModeValue("brand.600", "brand.300")}
+                >
+                  FurFeast
+                </Text> */}
+                </HStack>
               <Stack direction="row" spacing={4}>
                 {links.map((link) => (
                   <NavLink
@@ -126,7 +147,10 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
 
             <Stack direction="row" spacing={4} alignItems="center">
               <Text fontSize="sm" color="gray.500">
-                Welcome, {user?.username} ({user?.roles[0].name})
+                {user?.username}  (
+                {(user?.roles[0]?.name ?? "").charAt(0).toUpperCase() +
+                  (user?.roles[0]?.name ?? "").slice(1).toLowerCase()}
+                )
               </Text>
               <Tooltip
                 label={`Switch to ${

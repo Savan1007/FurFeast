@@ -1,14 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import { UseMutationResult } from "@tanstack/react-query";
-import { Requests, InsertFoodRequest, Suppliers, FoodRequest, GetRequestsQueryParams } from "./types";
+import {
+  Requests,
+  InsertFoodRequest,
+  FoodRequest,
+  GetRequestsQueryParams,
+  UpdateRequest,
+} from "./types";
 import { axiosInstance } from "../../../config/axios";
 import { data } from "react-router-dom";
 
-
-export const useFetchAllRequest = (): UseMutationResult<Requests, unknown, GetRequestsQueryParams> => {
+export const useFetchAllRequest = (): UseMutationResult<
+  Requests,
+  unknown,
+  GetRequestsQueryParams
+> => {
   return useMutation({
     mutationFn: async (queryParams: GetRequestsQueryParams) => {
-      const queryString = new URLSearchParams(queryParams as unknown as Record<string, string>).toString();
+      const queryString = new URLSearchParams(
+        queryParams as unknown as Record<string, string>
+      ).toString();
       const response = await axiosInstance.get(`/request?${queryString}`);
       return response.data;
     },
@@ -22,62 +33,35 @@ export const useCreateRequest = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: async (newRequest: InsertFoodRequest) => {
-      const subCategoryMap: {
-        [key: string]: { food_type: string; food_form: string; unit: string };
-      } = {
-        "Dog's Dry foods (KG)": {
-          food_type: "dog",
-          food_form: "dry",
-          unit: "kg",
-        },
-        "Dog's Wet foods (Cans)": {
-          food_type: "dog",
-          food_form: "wet",
-          unit: "can",
-        },
-        "Cat's Dry foods (KG)": {
-          food_type: "cat",
-          food_form: "dry",
-          unit: "kg",
-        },
-        "Cat's Wet foods (Cans)": {
-          food_type: "cat",
-          food_form: "wet",
-          unit: "can",
-        },
-      };
-
-      const { food_type, food_form, unit } =
-        subCategoryMap[newRequest.details[0].subCategory];
+      console.log("newRequest", newRequest);
 
       const payload = {
-        donation: {
-          supplier_id: newRequest.supplierId,
-          donation_category:
-            newRequest.details[0].category === "Foods"
-              ? "food"
-              : "miscellaneous",
-          food_type,
-          food_form,
-          quantity: newRequest.details[0].quantity,
-          unit: newRequest.details[0].category === "Foods" ? unit : "piece",
+        request: {
+          requestedBy: newRequest.requestedBy,
+          requestType: newRequest.requestType,
+          notes: newRequest.notes,
         },
+        requestDetails: newRequest.requestDetails.map((item) => ({
+          inventoryId: item.inventoryId,
+          quantity: item.quantity,
+        })),
       };
-      const response = await axiosInstance.post("/donation", payload);
+
+      const response = await axiosInstance.post("/request", payload);
       return response.data as FoodRequest;
     },
   });
 };
 
-export const useFetchAllSuppliers = (): UseMutationResult<
-  Suppliers,
-  unknown
+export const useUpdateRequest = (): UseMutationResult<
+  FoodRequest,
+  unknown,
+  { id: string; data: UpdateRequest }
 > => {
   return useMutation({
-    mutationFn: async () => {
-      const response = await axiosInstance.get("/suppliers");
-      console.log("data", response.data);
-      return response.data as Suppliers;
+    mutationFn: async ({ id, data }) => {
+      const response = await axiosInstance.put(`/request/${id}`, data);
+      return response.data as FoodRequest;
     },
   });
-};
+}

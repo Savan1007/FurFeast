@@ -19,12 +19,12 @@ class RequestService {
         userId,
         startDate,
         endDate,
-        page = 1,
-        limit = 10,
+        page,
+        limit,
         sort = 'createdAt',
         order = 'desc',
-        includeDetails = 'false',
-        includeUser = 'false',
+        includeDetails = 'true',
+        includeUser = 'true',
       } = query;
 
       const where = {};

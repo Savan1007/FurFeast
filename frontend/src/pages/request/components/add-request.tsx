@@ -20,6 +20,8 @@ import {
   Radio,
   RadioGroup,
   useToast,
+  FormErrorMessage,
+  Textarea,
 } from "@chakra-ui/react";
 import Navbar from "../../../components/navbar";
 import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
@@ -27,16 +29,58 @@ import { Form, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateRequest, useFetchAllSuppliers } from "../api/api";
+import { useCreateRequest } from "../api/api";
 import { insertFoodRequestSchema } from "../api/types";
+import { useGetAllUsers } from "../../users/api/api";
+import { useInventory, useRoles, useUser } from "../../../store/app-store";
+import { Roles } from "../../users/api/types";
+import { InventoryItems } from "../../inventory/api/types";
+import { Role } from "../../../utils/enums";
+
+const getRoleId = (roles: Roles, roleName: string) => {
+  const role = roles.find((role) => role.name === roleName);
+  return role ? role.id : null;
+};
 
 const AddRequest = () => {
   const navigate = useNavigate();
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const textColor = useColorModeValue("gray.600", "gray.400");
+  const [category, setCategory] = useState("");
   const { data: request, mutate, isSuccess, status } = useCreateRequest();
   const toast = useToast();
+  const roles = useRoles();
+  const getUsers = useGetAllUsers();
+  const inventory = useInventory();
+  const loggedInUser = useUser();
+
+  const form = useForm({
+    resolver: zodResolver(insertFoodRequestSchema),
+    defaultValues: {
+      requestType: "",
+      email: "",
+      phone: "",
+      requestedBy: "",
+      requestedByName: "",
+      notes: "",
+      requestDetails: [
+        {
+          category: "",
+          subCategory: "",
+          quantity: 0,
+          unit: "",
+          inventoryId: "",
+        },
+      ],
+    },
+  });
+
+  // const {
+  //   handleSubmit,
+  //   register,
+  //   formState: { errors, isSubmitting },
+  // } = useForm();
 
   useEffect(() => {
     if (isSuccess) {
@@ -47,67 +91,79 @@ const AddRequest = () => {
         duration: 5000,
         isClosable: true,
       });
-      navigate('/requests');
+      if (
+        loggedInUser?.roles[0].name === Role.Supplier.toString() ||
+        loggedInUser?.roles[0].name === Role.Community.toString()
+      ) {
+        navigate("/");
+      } else {
+        navigate("/requests");
+      }
     }
   }, [isSuccess, toast]);
-  const getSuppliers = useFetchAllSuppliers();
 
   useEffect(() => {
-    getSuppliers.mutate(undefined, {
-      onSuccess: () => {
-        console.log(getSuppliers.data?.data);
-        console.log("Data fetched successfully");
+    getUsers.mutate(
+      {
+        role:
+          getRoleId(
+            roles ?? [],
+            form.getValues("requestType") === "donation"
+              ? "supplier"
+              : "community"
+          ) || "",
       },
-      onError: (error) => {
-        console.error("Error fetching data", error);
-      },
-    });
-  }, [mutate]);
+      {
+        onSuccess: () => {
+          console.log("Data fetched successfully");
+        },
+        onError: (error) => {
+          console.error("Error fetching data", error);
+        },
+      }
+    );
+  }, [form.getValues("requestType")]);
 
-  const foodCategories: { [key: string]: string[] } = {
-    Foods: [
-      "Dog's Dry foods (KG)",
-      "Dog's Wet foods (Cans)",
-      "Cat's Dry foods (KG)",
-      "Cat's Wet foods (Cans)",
-    ],
-    Miscellaneous: [],
+  const getFoodCategories = (inventory: InventoryItems, category: string) => {
+    const foodCategories = (inventory ?? [])
+      .filter((item) => item.itemType === category)
+      .map(({ itemName, unit, id }) => ({ itemName, unit, id }));
+    return foodCategories;
   };
 
-  const form = useForm({
-    resolver: zodResolver(insertFoodRequestSchema),
-    defaultValues: {
-      type: "",
-      email: "",
-      phone: "",
-      organizationName: "",
-      supplierId: 0,
-      contactPerson: "",
-      details: [{ category: "", subCategory: "", quantity: 0, unit: "" }],
-    },
-  });
-
   const [selectedItems, setSelectedItems] = useState<
-    Array<{ category: string; subCategory: string; quantity: number }>
+    Array<{
+      category: string;
+      subCategory: string;
+      inventoryId: string;
+      quantity: number;
+    }>
   >([]);
 
   const handleAddItem = () => {
-    const details = form.getValues("details");
+    const details = form.getValues("requestDetails");
     const category = details?.[0]?.category || "";
     const subCategory = details?.[0]?.subCategory || "";
+    const inventoryId = details?.[0]?.inventoryId || "";
     const quantity = details?.[0]?.quantity || 0;
 
     if (category && quantity) {
       setSelectedItems([
         ...selectedItems,
         {
-          category: category,
-          subCategory: subCategory,
+          inventoryId,
           quantity,
+          category,
+          subCategory,
         },
       ]);
-      form.setValue("details", [
-        { category: "", subCategory: "", quantity: 0 },
+      form.setValue("requestDetails", [
+        {
+          inventoryId: "",
+          quantity: 0,
+          category: "",
+          subCategory: "",
+        },
       ]);
     }
   };
@@ -116,8 +172,47 @@ const AddRequest = () => {
     setSelectedItems(selectedItems.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const [error, setError] = useState(false);
+
+  const onSubmit = () => {
+    console.log("selectedItems", selectedItems);
+
+    if (loggedInUser?.roles[0].name === Role.Supplier.toString()) {
+      form.setValue("requestedBy", loggedInUser?.id);
+      form.setValue("requestType", "donation");
+    } else if (loggedInUser?.roles[0].name === Role.Community.toString()) {
+      form.setValue("requestedBy", loggedInUser?.id);
+      form.setValue("requestType", "distribution");
+    }
+
+    form.setValue("requestDetails", selectedItems);
     console.log("submitted", form.getValues());
+    const values = form.getValues();
+    const requiredFields: Array<keyof typeof values> = [
+      "requestType",
+      "requestedBy",
+      "requestDetails",
+    ];
+
+    const hasEmptyFields = requiredFields.some((field: keyof typeof values) => {
+      const value = values[field];
+      return !value || (typeof value === "string" && value.trim() === "");
+    });
+
+    if (hasEmptyFields || selectedItems.length === 0) {
+      setError(true);
+      toast({
+        title: "Validation Error",
+        description:
+          "Please fill all required fields and add at least one item.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setError(false);
     mutate(form.getValues());
   };
 
@@ -145,172 +240,195 @@ const AddRequest = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmit();
+              onSubmit();
             }}
           >
             <Stack spacing={6}>
               <Card>
                 <CardBody>
                   <Stack spacing={4}>
-                    <FormControl>
-                      <FormLabel>Type of Request</FormLabel>
-                      <RadioGroup
-                        onChange={(value) => form.setValue("type", value)}
-                      >
-                        <Stack>
-                          <Radio value="supplier">Suppliers</Radio>
-                          <Radio value="community">
-                            Community Organizations/Individuals
-                          </Radio>
-                        </Stack>
-                      </RadioGroup>
-                    </FormControl>
-
-                    {form.watch("type") && (
+                    {(loggedInUser?.roles[0].name === Role.Admin.toString() ||
+                      loggedInUser?.roles[0].name ===
+                        Role.SuperAdmin.toString()) && (
+                      <>
+                        <FormControl>
+                          <FormLabel>Type of Request *</FormLabel>
+                          <RadioGroup
+                            onChange={(value) =>
+                              form.setValue("requestType", value)
+                            }
+                          >
+                            <Stack>
+                              <Radio value="donation">Suppliers</Radio>
+                              <Radio value="distribution">
+                                Community Organizations/Individuals
+                              </Radio>
+                            </Stack>
+                          </RadioGroup>
+                        </FormControl>
+                      </>
+                    )}
+                    {loggedInUser?.roles[0].name === Role.Supplier.toString() ||
+                      loggedInUser?.roles[0].name ===
+                        Role.Community.toString() ||
+                      (form.watch("requestType") && (
+                        <>
+                          <Stack direction={"column"}>
+                            <FormControl
+                              width="50%"
+                              isInvalid={error && !form.watch("requestedBy")}
+                            >
+                              <FormLabel>
+                                {form.watch("requestType") === "donation"
+                                  ? "Supplier Name *"
+                                  : "Organization Name *"}
+                              </FormLabel>
+                              <Select
+                                placeholder="Choose a name"
+                                value={`${form.watch("requestedBy") || ""} ${
+                                  form.watch("requestedByName") || ""
+                                }`.trim()}
+                                onChange={(e) => {
+                                  const [id, ...nameParts] =
+                                    e.target.value.split(" ");
+                                  form.setValue("requestedBy", id);
+                                  form.setValue(
+                                    "requestedByName",
+                                    nameParts.join(" ")
+                                  );
+                                }}
+                              >
+                                {getUsers.isSuccess && getUsers.data ? (
+                                  getUsers.data.data.map((user) => (
+                                    <option
+                                      key={user.id}
+                                      value={
+                                        user.id + " " + user.userDetails?.name
+                                      }
+                                    >
+                                      {user.userDetails?.name} ({user.username})
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="" disabled>
+                                    Loading...
+                                  </option>
+                                )}
+                              </Select>
+                            </FormControl>
+                          </Stack>
+                        </>
+                      ))}
+                    {loggedInUser?.roles[0].name === Role.Supplier.toString() ||
+                    loggedInUser?.roles[0].name === Role.Community.toString() ||
+                    form.watch("requestType") ? (
                       <>
                         <Stack direction={"row"}>
-                          <FormControl>
-                            <FormLabel>
-                              {form.watch("type") === "supplier"
-                                ? "Supplier Name"
-                                : "Organization Name"}
-                            </FormLabel>
+                          <FormControl
+                            width="50%"
+                            isInvalid={
+                              error &&
+                              !form.watch("requestDetails")[0]?.category
+                            }
+                          >
+                            <FormLabel>Category *</FormLabel>
                             <Select
                               placeholder="Choose a category"
-                              value={(form.watch("organizationName") || form.watch("supplierId")) || ""}
+                              value={form.watch("requestDetails")[0]?.category}
                               onChange={(e) => {
-                                if (form.watch("type") === "supplier") {
-                                  form.setValue("supplierId", parseInt(e.target.value));
-                                } else {
-                                  form.setValue(
-                                    "organizationName",
-                                    e.target.value
-                                  );
-                                }
-                              }}
-                            >
-                              {getSuppliers.data &&
-                                getSuppliers.data.data.map(
-                                  (supplier: { id: number; name: string }) => (
-                                    <option
-                                      key={supplier.id}
-                                      value={supplier.id}
-                                    >
-                                      {supplier.name}
-                                    </option>
-                                  )
-                                )}
-                            </Select>
-                          </FormControl>
-
-                          <FormControl>
-                            <FormLabel>Contact Person</FormLabel>
-                            <Input
-                              type="contactPerson"
-                              placeholder="Enter contact person"
-                              value={form.watch("contactPerson") || ""}
-                              onChange={(e) => {
-                                form.setValue("contactPerson", e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                        </Stack>
-
-                        <Stack direction={"row"}>
-                          <FormControl>
-                            <FormLabel>Phone</FormLabel>
-                            <Input
-                              type="phone"
-                              placeholder="Enter phone number"
-                              value={form.watch("phone") || ""}
-                              onChange={(e) => {
-                                form.setValue("phone", e.target.value);
-                              }}
-                            />
-                          </FormControl>
-
-                          <FormControl>
-                            <FormLabel>Email</FormLabel>
-                            <Input
-                              type="email"
-                              placeholder="Enter email"
-                              value={form.watch("email") || ""}
-                              onChange={(e) => {
-                                form.setValue("email", e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                        </Stack>
-
-                        <Stack direction={"row"}>
-                          <FormControl width="50%">
-                            <FormLabel>Category</FormLabel>
-                            <Select
-                              placeholder="Choose a category"
-                              value={form.watch("details")[0]?.category || ""}
-                              onChange={(e) => {
+                                setCategory(e.target.value);
                                 form.setValue(
-                                  "details.0.category",
+                                  "requestDetails.0.category",
                                   e.target.value
                                 );
                               }}
                             >
-                              {Object.keys(foodCategories).map((category) => (
-                                <option key={category} value={category}>
-                                  {category}
-                                </option>
-                              ))}
+                              <option value="food">Food</option>
+                              <option value="miscellaneous">
+                                Miscellaneous
+                              </option>
                             </Select>
                           </FormControl>
 
-                          {foodCategories[form.watch("details")[0]?.category]
-                            ?.length > 0 && (
-                            <FormControl width="50%">
-                              <FormLabel>Subcategory</FormLabel>
+                          {category && (
+                            <FormControl
+                              width="50%"
+                              isInvalid={
+                                error &&
+                                !form.watch("requestDetails")[0]?.inventoryId
+                              }
+                            >
+                              <FormLabel>Subcategory *</FormLabel>
                               <Select
                                 placeholder="Choose a subcategory"
                                 value={
-                                  form.watch("details")[0]?.subCategory || ""
+                                  form.watch("requestDetails")[0]?.inventoryId
                                 }
                                 onChange={(e) => {
                                   form.setValue(
-                                    "details.0.subCategory",
+                                    "requestDetails.0.inventoryId",
                                     e.target.value
                                   );
                                 }}
                               >
-                                {foodCategories[
-                                  form.watch("details")[0]?.category
-                                ]?.map((subcategory) => (
-                                  <option key={subcategory} value={subcategory}>
-                                    {subcategory}
-                                  </option>
-                                ))}
+                                {getFoodCategories(inventory, category)?.map(
+                                  (subcategory) => (
+                                    <option
+                                      key={subcategory.id}
+                                      value={subcategory.id}
+                                    >
+                                      {subcategory.itemName} ({subcategory.unit}
+                                      )
+                                    </option>
+                                  )
+                                )}
                               </Select>
                             </FormControl>
                           )}
                         </Stack>
 
-                        <FormControl width="50%">
-                          <FormLabel>Quantity</FormLabel>
+                        <FormControl
+                          width="50%"
+                          isInvalid={
+                            (error && !form.watch("requestDetails")[0]?.quantity) && form.watch("requestDetails")[0]?.quantity <= 0
+                          }
+                        >
+                          <FormLabel>Quantity *</FormLabel>
                           <Input
                             type="number"
                             placeholder="Enter quantity"
-                            value={form.watch("details")[0]?.quantity || ""}
+                            value={
+                              form.watch("requestDetails")[0]?.quantity || ""
+                            }
                             onChange={(e) => {
-                              form.setValue(
-                                "details.0.quantity",
-                                parseInt(e.target.value)
-                              );
+                              const value = parseInt(e.target.value);
+                              if (value > 0) {
+                                form.setValue(
+                                  "requestDetails.0.quantity",
+                                  value
+                                );
+                              } else {
+                                form.setValue("requestDetails.0.quantity", 0);
+                              }
                             }}
                           />
+                          {/* {form.watch("requestDetails")[0]?.quantity <= 0 && (
+                            <FormErrorMessage>
+                              Quantity must be greater than zero.
+                            </FormErrorMessage>
+                          )} */}
                         </FormControl>
 
                         <Button
                           onClick={() => {
                             handleAddItem();
-                            form.setValue("details", [
-                              { category: "", subCategory: "", quantity: 0 },
+                            form.setValue("requestDetails", [
+                              {
+                                inventoryId: "",
+                                quantity: 0,
+                                category: "",
+                                subCategory: "",
+                              },
                             ]);
                           }}
                           colorScheme="blue"
@@ -320,7 +438,7 @@ const AddRequest = () => {
                           Add Item
                         </Button>
                       </>
-                    )}
+                    ) : null}
 
                     {selectedItems.length > 0 && (
                       <Card>
@@ -342,13 +460,23 @@ const AddRequest = () => {
                                   <Icon as={Package} />
                                   <Box>
                                     <Text fontWeight="medium">
-                                      {item.category}
+                                      {item.category.charAt(0).toUpperCase() +
+                                        item.category.slice(1)}
                                     </Text>
                                     <Text fontWeight="small">
-                                      {item.subCategory}
+                                      {
+                                        inventory?.find(
+                                          (i) => i.id === item.inventoryId
+                                        )?.itemName
+                                      }
                                     </Text>
                                     <Badge colorScheme="blue">
-                                      {item.quantity} units
+                                      {item.quantity}{" "}
+                                      {
+                                        inventory?.find(
+                                          (i) => i.id === item.inventoryId
+                                        )?.unit
+                                      }
                                     </Badge>
                                   </Box>
                                 </Flex>
@@ -366,6 +494,15 @@ const AddRequest = () => {
                         </CardBody>
                       </Card>
                     )}
+
+                    <FormControl width="50%">
+                      <FormLabel>Additional Notes</FormLabel>
+                      <Textarea
+                        placeholder="Enter additional notes"
+                        value={form.watch("notes") || ""}
+                        onChange={(e) => form.setValue("notes", e.target.value)}
+                      />
+                    </FormControl>
                   </Stack>
                 </CardBody>
               </Card>

@@ -33,19 +33,28 @@ import AddUser from "./components/add-user";
 import { useGetAllUsers } from "./api/api";
 import { Role } from "../../utils/enums";
 import { set } from "react-hook-form";
+import UserModal from "./components/user-modal";
+import { User } from "./api/types";
 
 const Users = () => {
   const textColor = useColorModeValue("gray.600", "gray.400");
   const headingColor = useColorModeValue("gray.800", "white");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data: users, mutate, status } = useGetAllUsers();
+  const {
+    isOpen: isView,
+    onOpen: onView,
+    onClose: onCloseView,
+  } = useDisclosure();
+
+  const [selectedUser, setSelectedUser] = useState<User>();
 
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!isOpen) {
-      mutate({limit, page});
+      mutate({ limit, page });
     }
   }, [isOpen, limit, page]);
 
@@ -83,7 +92,7 @@ const Users = () => {
                   </Thead>
                   <Tbody>
                     {users?.data.map((user) => (
-                      <Tr key={user._id}>
+                      <Tr key={user.id}>
                         <Td>{user.username}</Td>
                         <Td>{user.email}</Td>
                         <Td>
@@ -111,18 +120,24 @@ const Users = () => {
                               variant="ghost"
                             />
                             <MenuList>
-                              <MenuItem icon={<EyeIcon size={"16"} />}>
+                              <MenuItem
+                                icon={<EyeIcon size={"16"} />}
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  onView();
+                                }}
+                              >
                                 View
                               </MenuItem>
-                              <MenuItem
+                              {/* <MenuItem
                                 icon={<Pencil size={"16"} />}
-                                // onClick={() => {
-                                //   setSelectedRequest(request);
-                                //   onOpen();
-                                // }}
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  onView();
+                                }}
                               >
                                 Edit
-                              </MenuItem>
+                              </MenuItem> */}
                             </MenuList>
                           </Menu>
                         </Td>
@@ -194,6 +209,7 @@ const Users = () => {
         </Stack>
       </Box>
       <AddUser isOpen={isOpen} onClose={onClose} />
+      <UserModal isOpen={isView} onClose={onCloseView} user={selectedUser} />
     </Navbar>
   );
 };

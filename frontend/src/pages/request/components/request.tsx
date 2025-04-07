@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { use, useEffect, useState } from "react";
 import Navbar from "../../../components/navbar";
 import { CheckCircle, Clock, Plus, XCircle } from "lucide-react";
 import {
@@ -18,139 +18,159 @@ import {
   Badge,
   useColorModeValue,
   Skeleton,
+  useToast,
 } from "@chakra-ui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RequestTable from "./request-table";
-import { useFetchAllRequest } from "../api/api";
+import { useFetchAllRequest, useUpdateRequest } from "../api/api";
+import { Requests } from "../api/types";
+import { useFetchAllInventory } from "../../inventory/api/api";
+import { useActions, useInventory, useUser } from "../../../store/app-store";
+import { Role } from "../../../utils/enums";
 
 const Request = () => {
   const navigate = useNavigate();
-  const { data: requests, mutate, isSuccess, status } = useFetchAllRequest();
+  const storeActions = useActions();
+  const { mutateAsync } = useFetchAllRequest();
+  const [pendingRequests, setPendingRequests] = useState<Requests>();
+  const [approvedRequests, setApprovedRequests] = useState<Requests>();
+  const [rejectedRequests, setRejectedRequests] = useState<Requests>();
 
   useEffect(() => {
-    mutate({ status: "pending", includeDetails: true, includeUser: true }, {
-      onSuccess: () => {
-        console.log("Pending requests fetched successfully");
-      },
-      onError: (error) => {
-        console.error("Error fetching pending requests", error);
-      }
-    });
+    const fetchRequests = async () => {
+      try {
+        const [pending, approved, rejected] = await Promise.all([
+          mutateAsync({
+            status: "pending",
+            includeDetails: true,
+            includeUser: true,
+          }),
+          mutateAsync({
+            status: "approved",
+            includeDetails: true,
+            includeUser: true,
+          }),
+          mutateAsync({
+            status: "rejected",
+            includeDetails: true,
+            includeUser: true,
+          }),
+        ]);
 
-    mutate({ status: "approved", includeDetails: true, includeUser: true }, {
-      onSuccess: () => {
-        console.log("Approved requests fetched successfully");
-      },
-      onError: (error) => {
-        console.error("Error fetching approved requests", error);
+        setPendingRequests(pending);
+        setApprovedRequests(approved);
+        setRejectedRequests(rejected);
+      } catch (error) {
+        console.error("Error fetching requests", error);
       }
-    });
+    };
 
-    mutate({ status: "rejected", includeDetails: true, includeUser: true }, {
-      onSuccess: () => {
-        console.log("Rejected requests fetched successfully");
-      },
-      onError: (error) => {
-        console.error("Error fetching rejected requests", error);
-      }
-    });
-  }, [mutate]);
-  
-  useEffect(() => {
-    if (isSuccess) {
-      console.log("Data fetched successfully");
-    }
-  }, [isSuccess]);
+    fetchRequests();
+  }, [mutateAsync]);
+
   const textColor = useColorModeValue("gray.600", "gray.400");
   const headingColor = useColorModeValue("gray.800", "white");
-  
-  // if (status === "pending") {
-  //   return <div>Loading...</div>;
-  // }
-  console.log("requests", requests);
 
-  const pendingRequests = requests?.data?.filter((req) => req.status === "pending") || [];
-  const approvedRequests = requests?.data?.filter((req) => req.status === "approved") || [];
-  const rejectedRequests = requests?.data?.filter((req) => req.status === "rejected") || [];
-  console.log("pendingRequests", pendingRequests);
-  // const pendingRequests =
-  //   Array.isArray(requests) ? requests.flatMap((req) => req.data || []).filter((req) => req.status === "pending") : [];
-  // const approvedRequests =
-  //   Array.isArray(requests) ? requests.flatMap((req) => req.data || []).filter((req) => req.status === "approved") : [];
-  // const rejectedRequests =
-  //   Array.isArray(requests) ? requests.flatMap((req) => req.data || []).filter((req) => req.status === "rejected") : [];
+  const user = useUser();
 
   return (
     <Navbar>
       <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
         <Stack spacing={8}>
-          <Flex justify="space-between" align="center">
-            <Box>
-              <Heading size="lg" color={headingColor}>
-                Food Requests
-              </Heading>
-              <Text color={textColor}>
-                Manage and track food distribution requests
-              </Text>
-            </Box>
-            <Button
-              colorScheme="blue"
-              size="lg"
-              leftIcon={<Plus size={20} />}
-              onClick={() => navigate("/requests/new")}
-            >
-              New Request
-            </Button>
-          </Flex>
-          <Skeleton isLoaded={status !== "success"}>
-          <Card>
-            <CardBody>
-              <Tabs>
-                <TabList>
-                  <Tab>
-                    <Flex align="center" gap={2}>
-                      <Clock size={16} />
-                      Pending
-                      <Badge ml={2} colorScheme="orange" variant="subtle">
-                        {pendingRequests.length}
-                      </Badge>
-                    </Flex>
-                  </Tab>
-                  <Tab>
-                    <Flex align="center" gap={2}>
-                      <CheckCircle size={16} />
-                      Approved
-                      <Badge ml={2} colorScheme="green" variant="subtle">
-                        {approvedRequests.length}
-                      </Badge>
-                    </Flex>
-                  </Tab>
-                  <Tab>
-                    <Flex align="center" gap={2}>
-                      <XCircle size={16} />
-                      Rejected
-                      <Badge ml={2} colorScheme="red" variant="subtle">
-                        {rejectedRequests.length}
-                      </Badge>
-                    </Flex>
-                  </Tab>
-                </TabList>
+          {(user?.roles[0].name === Role.SuperAdmin ||
+            user?.roles[0].name === Role.Admin) && (
+            <Flex justify="space-between" align="center">
+              <Box>
+                <Heading size="lg" color={headingColor}>
+                  Food Requests
+                </Heading>
+                <Text color={textColor}>
+                  Manage and track food distribution requests
+                </Text>
+              </Box>
+              <Button
+                colorScheme="blue"
+                size="lg"
+                leftIcon={<Plus size={20} />}
+                onClick={() => navigate("/requests/new")}
+              >
+                New Request
+              </Button>
+            </Flex>
+          )}
+          <Skeleton
+            isLoaded={
+              pendingRequests !== undefined &&
+              approvedRequests !== undefined &&
+              rejectedRequests !== undefined
+            }
+          >
+            <Card>
+              <CardBody>
+                <Tabs>
+                  <TabList>
+                    <Tab>
+                      <Flex align="center" gap={2}>
+                        <Clock size={16} color="orange" />
+                        Pending
+                        <Badge ml={2} colorScheme="orange" variant="subtle">
+                          {/* {pendingRequests?.data.length} */}
+                        </Badge>
+                      </Flex>
+                    </Tab>
+                    <Tab>
+                      <Flex align="center" gap={2}>
+                        <CheckCircle size={16} color="green" />
+                        Approved
+                        <Badge ml={2} colorScheme="green" variant="subtle">
+                          {/* {approvedRequests?.data.length} */}
+                        </Badge>
+                      </Flex>
+                    </Tab>
+                    <Tab>
+                      <Flex align="center" gap={2}>
+                        <XCircle size={16} color="red" />
+                        Rejected
+                        <Badge ml={2} colorScheme="red" variant="subtle">
+                          {/* {rejectedRequests?.data.length} */}
+                        </Badge>
+                      </Flex>
+                    </Tab>
+                  </TabList>
 
-                {/* <TabPanels>
-                  <TabPanel px={0}>
-                    <RequestTable requests={{ data: pendingRequests }} />
-                  </TabPanel>
-                  <TabPanel px={0}>
-                    <RequestTable requests={{ data: approvedRequests }} />
-                  </TabPanel>
-                  <TabPanel px={0}>
-                    <RequestTable requests={{ data: rejectedRequests }} />
-                  </TabPanel>
-                </TabPanels> */}
-              </Tabs>
-            </CardBody>
-          </Card>
-          </Skeleton> 
+                  <TabPanels>
+                    <TabPanel px={0}>
+                      {pendingRequests?.data.length ? (
+                        <RequestTable status="pending" />
+                      ) : (
+                        <Text color={textColor}>
+                          No pending requests available.
+                        </Text>
+                      )}
+                    </TabPanel>
+                    <TabPanel px={0}>
+                      {approvedRequests?.data.length ? (
+                        <RequestTable status="approved" />
+                      ) : (
+                        <Text color={textColor}>
+                          No approved requests available.
+                        </Text>
+                      )}
+                    </TabPanel>
+                    <TabPanel px={0}>
+                      {rejectedRequests?.data.length ? (
+                        <RequestTable status="rejected" />
+                      ) : (
+                        <Text color={textColor}>
+                          No rejected requests available.
+                        </Text>
+                      )}
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
+              </CardBody>
+            </Card>
+          </Skeleton>
         </Stack>
       </Box>
     </Navbar>

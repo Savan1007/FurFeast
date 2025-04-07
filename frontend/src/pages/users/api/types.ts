@@ -1,18 +1,19 @@
 import { Phone } from "lucide-react";
 import { z } from "zod";
 
-const RoleSchema = z.object({
+const RoleSchema = z.array(z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-});
+}));
 
 export const getAllRolesSchema = z.object({
   success: z.boolean(),
-  data: z.array(RoleSchema),
+  data: RoleSchema,
   total: z.number(),
 });
 
+export type Roles = z.infer<typeof RoleSchema>;
 export type GetAllRoles = z.infer<typeof getAllRolesSchema>;
 
 export const insertNewUserSchema = z.object({
@@ -39,6 +40,7 @@ export const getAllUsersQueryParamsSchema = z.object({
   isBanned: z.boolean().optional(),
   sortBy: z.string().optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
+  role: z.string().optional(),
 });
 
 export type GetAllUsersQueryParams = z.infer<
@@ -54,7 +56,7 @@ export const userRoleSchema = z.object({
 });
 
 export const userSchema = z.object({
-  _id: z.string(),
+  id: z.string(),
   username: z.string(),
   email: z.string().email(),
   password: z.string(),
@@ -64,6 +66,11 @@ export const userSchema = z.object({
   createdBy: z.string().nullable(),
   emailVerificationToken: z.string(),
   emailVerificationTokenExpiry: z.string(),
+  userDetails: z.object({
+    name: z.string(),
+    phone: z.string(),
+    address: z.string(),
+  }).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   __v: z.number(),
@@ -75,6 +82,7 @@ export const getAllUsersResponseSchema = z.object({
   total: z.number(),
 });
 
+export type User = z.infer<typeof userSchema>;
 export type GetAllUsersResponse = z.infer<typeof getAllUsersResponseSchema>;
 
 export const userExistsResponseSchema = z.object({

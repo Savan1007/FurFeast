@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { Box, Card, CardBody, Text } from "@chakra-ui/react";
-import { AppProvider, useAccessToken, useAuthUser } from "./store/app-store";
+import {
+  AppProvider,
+  useAccessToken,
+  useActions,
+  useAuthUser,
+  useUser,
+} from "./store/app-store";
 import {
   createBrowserRouter,
   Navigate,
@@ -16,6 +22,10 @@ import NotFound from "./pages/not-found/not-found";
 import Request from "./pages/request/components/request";
 import AddRequest from "./pages/request/components/add-request";
 import Users from "./pages/users/users";
+import { useGetAllRoles } from "./pages/users/api/api";
+import { useFetchAllInventory } from "./pages/inventory/api/api";
+import Inventory from "./pages/inventory/inventory";
+import Reports from "./pages/report/reports";
 
 // Example: Check token expiry
 const isTokenValid = () => {
@@ -46,16 +56,17 @@ const ProtectedRoute = () => {
     </Box>
   );
 };
-
 const router = createBrowserRouter([
   {
     path: "/",
     element: <ProtectedRoute />, // Protects all child routes
     children: [
       { index: true, element: <Dashboard /> },
+      { path: "inventory", element: <Inventory /> },
       { path: "requests", element: <Request /> },
       { path: "requests/new", element: <AddRequest /> },
       { path: "users", element: <Users /> },
+      { path: "reports", element: <Reports /> },
       { path: "*", element: <NotFound /> }, // Catch-all route for undefined paths
     ],
   },
@@ -64,10 +75,58 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const { data: roles, mutate: roleMutate, isSuccess } = useGetAllRoles();
+  const {
+    data: inventory,
+    mutate: InventoryMutate,
+    isSuccess: inventorySuccess,
+  } = useFetchAllInventory();
+  const storeActions = useActions();
+
+  const user = useUser();
+
+  const getFilteredRoutes = () => {
+    const userRole = user?.roles[0]?.name; // Assuming roles is an array and you want the first role
+
+    if (userRole === "supplier" || userRole === "community") {
+      return createBrowserRouter([
+        {
+          path: "/",
+          element: <ProtectedRoute />,
+          children: [
+            { index: true, element: <Dashboard /> },
+            { path: "*", element: <NotFound /> },
+            { path: "requests/new", element: <AddRequest /> },
+          ],
+        },
+        { path: "/auth", element: <Auth /> },
+        { path: "*", element: <NotFound /> }, // Catch-all route for undefined paths outside protected routes
+      ]);
+    }
+
+    return router; // Default router for other roles
+  };
+
+  const filteredRouter = getFilteredRoutes();
+
+  if (isSuccess && inventorySuccess) {
+    storeActions?.setRoles(roles?.data);
+    storeActions?.setInventory(inventory?.data);
+  }
+
+  useEffect(() => {
+    if (!isSuccess) {
+      roleMutate(undefined);
+    }
+    if (!inventorySuccess) {
+      InventoryMutate(undefined);
+    }
+  }, []);
+
   return (
-    <AppProvider>
-      <RouterProvider router={router} />
-    </AppProvider>
+    <>
+      <RouterProvider router={filteredRouter} />
+    </>
   );
 }
 

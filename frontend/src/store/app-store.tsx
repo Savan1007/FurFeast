@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { createStore, StoreApi, useStore } from "zustand";
 import { User } from "../pages/auth/api/types";
 import { useFetchUser } from "../pages/auth/api/api";
+import { InventoryItems } from "../pages/inventory/api/types";
+import { Roles } from "../pages/users/api/types";
 
 export interface AuthUser {
   id: string;
@@ -13,10 +15,14 @@ export interface AppStore {
   authUser?: AuthUser;
   user?: User;
   accessToken?: string;
+  inventory?: InventoryItems;
+  roles?: Roles;
   actions?: {
     setAuthUser: (AuthUser: AuthUser) => void;
     setUser: (user: User) => void;
     setAccessToken: (accessToken: string) => void;
+    setInventory: (inventory: InventoryItems) => void;
+    setRoles: (roles: Roles) => void;
     logout: () => void;
   };
 }
@@ -45,6 +51,13 @@ export const AppProvider = ({ children, initialValues }: AppProviderProps) => {
           localStorage.setItem("accessToken", accessToken);
           set({ accessToken });
         },
+        setInventory: (inventory) => {
+          set({ inventory });
+        },
+        setRoles: (roles) => {
+          set({ roles });
+        },
+         // Logout function to clear authUser and accessToken
         logout: () => {
           localStorage.removeItem("accessToken");
           set({ authUser: undefined, accessToken: undefined });
@@ -103,3 +116,5 @@ export const useActions = () => useAppStore((state) => state.actions);
 export const useAuthUser = () => useAppStore((state) => state.authUser);
 export const useAccessToken = () => useAppStore((state) => state.accessToken);
 export const useUser = () => useAppStore((state) => state.user);
+export const useInventory = () => useAppStore((state) => state.inventory);
+export const useRoles = () => useAppStore((state) => state.roles);

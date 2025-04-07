@@ -95,6 +95,7 @@ class InventoryController {
             
             console.log(req.body)
            const result = await InventoryService.updateByModel(req.params.id, req.body);
+           console.log("result", result)
            res.status(200).json({success:true, data:result, message:"inventroy updated successfully"});
         }catch(error){
             if (error?.errors) {return res.status(error.status || 400).json({ success: false, message: 'Validation error', errors: error.errors });}

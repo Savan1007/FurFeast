@@ -43,16 +43,11 @@ const Auth = () => {
   const schema = yup.object({
     emailOrUsername: yup.string().required("Email/Username is required."),
     password: yup.string().required("Password is required."),
-    confirmPassword: yup
-      .string()
-      .oneOf([yup.ref("password"), undefined], "Passwords must match")
-      .required("Retype Password is required."),
   });
 
   type FormData = {
     emailOrUsername: string;
     password: string;
-    confirmPassword: string;
   };
 
   const {
@@ -187,43 +182,8 @@ const Auth = () => {
                         </FormErrorMessage>
                       </Stack>
                     </FormControl>
-                    <FormControl isInvalid={!!errors.password}>
-                      <Stack>
-                        <FormLabel htmlFor="password" mt="4">
-                          Retype Password
-                        </FormLabel>
-                        <InputGroup size="md">
-                          <Input
-                            isRequired={true}
-                            id="confirmPassword"
-                            type={show ? "text" : "password"}
-                            borderBottomWidth="2px"
-                            placeholder="Enter your Retype Password"
-                            variant="flushed"
-                            {...register("confirmPassword")}
-                          />
-                          <InputRightElement width="4.5rem">
-                            <Button
-                              h="1.75rem"
-                              size="sm"
-                              onClick={handleClick}
-                              variant={"ghost"}
-                            >
-                              {show ? (
-                                <EyeIcon size={16} />
-                              ) : (
-                                <EyeOff size={16} />
-                              )}
-                            </Button>
-                          </InputRightElement>
-                        </InputGroup>
-                        <FormErrorMessage>
-                          {errors.confirmPassword?.message}
-                        </FormErrorMessage>
-                      </Stack>
-                    </FormControl>
                   </Stack>
-                  {(isError || data?.success) && (
+                  {isError && (
                     <Text color="red">Invalid email or password</Text>
                   )}
                   <Stack spacing="6">
